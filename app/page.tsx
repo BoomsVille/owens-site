@@ -73,7 +73,7 @@ export default async function Home() {
                   I help brands show up better online.
                   <Link
                     href="/desktop"
-                    className="ml-3 inline-flex translate-y-[-3px] items-center rounded-full border border-accentBlue/75 px-3 py-1 align-middle text-[11px] font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-200 hover:border-accentBlueSoft hover:text-mist"
+                    className="ml-3 hidden translate-y-[-3px] items-center rounded-full border border-accentBlue/75 px-3 py-1 align-middle text-[11px] font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-200 hover:border-accentBlueSoft hover:text-mist sm:inline-flex"
                     aria-label="Open Mac view"
                   >
                     Mac View

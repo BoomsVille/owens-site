@@ -14,6 +14,8 @@ type WorkImageCardProps = {
   fallbackSlides?: WorkImage[];
 };
 
+const warmedSlideSources = new Set<string>();
+
 function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
   const derivedSlides = image.cardLabel
     ? []
@@ -24,7 +26,7 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const isDevelopmentCard = image.cardLabel?.toLowerCase() === "development";
   const activeSlide = slides[activeIndex];
-  const activeSlideRef = useRef<HTMLAnchorElement | null>(null);
+  const activeSlideRef = useRef<HTMLDivElement | null>(null);
   const [canScrollDevelopmentImage, setCanScrollDevelopmentImage] = useState(false);
   const [isDevelopmentImageAtTop, setIsDevelopmentImageAtTop] = useState(true);
 
@@ -32,6 +34,16 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
 
   const goPrev = () => setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
   const goNext = () => setActiveIndex((prev) => (prev + 1) % slides.length);
+
+  useEffect(() => {
+    slides.forEach((slide) => {
+      if (warmedSlideSources.has(slide.src)) return;
+      warmedSlideSources.add(slide.src);
+      const img = new window.Image();
+      img.decoding = "async";
+      img.src = slide.src;
+    });
+  }, [slides]);
 
   useEffect(() => {
     if (!isDevelopmentCard || !activeSlideRef.current) return;
@@ -58,12 +70,8 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
   return (
     <figure className="w-[84%] shrink-0 snap-start [scroll-snap-stop:always] overflow-hidden rounded-xl border border-slateLine/70 bg-slatePanel/40 sm:w-[48%] md:w-[calc((100%_-_2rem)/3)]">
       <div className="relative w-full overflow-hidden aspect-[4/5]">
-        <a
+        <div
           ref={activeSlideRef}
-          href={activeSlide.src}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Open full-size image ${id}`}
           onScroll={(event) => {
             if (!isDevelopmentCard) return;
             setIsDevelopmentImageAtTop(event.currentTarget.scrollTop <= 6);
@@ -82,7 +90,7 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
             }}
             className={isDevelopmentCard ? "block h-auto w-full" : "block h-full w-full object-cover object-center"}
           />
-        </a>
+        </div>
 
         {isDevelopmentCard && canScrollDevelopmentImage && isDevelopmentImageAtTop && (
           <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-white/30 bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
@@ -94,7 +102,11 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
           <div className="absolute inset-x-2 top-2 z-30 flex justify-between">
             <button
               type="button"
-              onClick={goPrev}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                goPrev();
+              }}
               aria-label={`Previous slide ${id}`}
               className="rounded-full border border-white/35 bg-black/35 px-2 py-1 text-[10px] text-white backdrop-blur-sm"
             >
@@ -102,7 +114,11 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
             </button>
             <button
               type="button"
-              onClick={goNext}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                goNext();
+              }}
               aria-label={`Next slide ${id}`}
               className="rounded-full border border-white/35 bg-black/35 px-2 py-1 text-[10px] text-white backdrop-blur-sm"
             >
