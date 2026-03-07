@@ -45,22 +45,30 @@ export function ContactPanel() {
 
       {isGameOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#050a14]/55 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-50 overflow-y-auto bg-[#050a14]/55 backdrop-blur-md"
           onClick={(event) => {
             if (event.target === event.currentTarget) setIsGameOpen(false);
           }}
         >
-          <div className="w-full max-w-4xl">
-            <div className="mb-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsGameOpen(false)}
-                className="rounded-full border border-slateLine bg-slatePanel/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.13em] text-mistSoft transition-colors duration-300 hover:border-accentBlue hover:text-mist"
-              >
-                Close
-              </button>
+          <div
+            className="flex min-h-full items-start justify-center p-4 sm:items-center"
+            style={{
+              paddingTop: "max(1rem, env(safe-area-inset-top))",
+              paddingBottom: "max(1rem, env(safe-area-inset-bottom))"
+            }}
+          >
+            <div className="w-full max-w-4xl">
+              <div className="mb-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsGameOpen(false)}
+                  className="rounded-full border border-slateLine bg-slatePanel/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.13em] text-mistSoft transition-colors duration-300 hover:border-accentBlue hover:text-mist"
+                >
+                  Close
+                </button>
+              </div>
+              <RetroTvGalaga />
             </div>
-            <RetroTvGalaga />
           </div>
         </div>
       )}

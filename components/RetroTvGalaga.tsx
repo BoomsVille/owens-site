@@ -1160,7 +1160,7 @@ export function RetroTvGalaga() {
   }, []);
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-accentBlue/80">Arcade Corner</p>
 
       <div className="retro-tv-shell">
