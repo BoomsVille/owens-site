@@ -38,6 +38,15 @@ a:visited {
   scroll-margin-top: 5rem;
 }
 
+.led-card-edge {
+  background-image: none;
+  box-shadow: none;
+}
+
+.led-btn-edge {
+  box-shadow: none;
+}
+
 .nav-link {
   position: relative;
   width: fit-content;
@@ -261,6 +270,7 @@ a:visited {
   display: flex;
   gap: 0.45rem;
 }
+
 
 .startup-loader-bars span {
   height: 0.3rem;

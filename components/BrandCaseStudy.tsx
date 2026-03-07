@@ -68,7 +68,7 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
   }, [activeSlide.src, isDevelopmentCard]);
 
   return (
-    <figure className="w-[84%] shrink-0 snap-start [scroll-snap-stop:always] overflow-hidden rounded-xl border border-slateLine/70 bg-slatePanel/40 sm:w-[48%] md:w-[calc((100%_-_2rem)/3)]">
+    <figure className="led-card-edge w-[84%] shrink-0 snap-start [scroll-snap-stop:always] overflow-hidden rounded-xl border border-slateLine/70 bg-slatePanel/40 sm:w-[48%] md:w-[calc((100%_-_2rem)/3)]">
       <div className="relative w-full overflow-hidden aspect-[4/5]">
         <div
           ref={activeSlideRef}
@@ -108,7 +108,7 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
                 goPrev();
               }}
               aria-label={`Previous slide ${id}`}
-              className="rounded-full border border-white/35 bg-black/35 px-2 py-1 text-[10px] text-white backdrop-blur-sm"
+              className="led-btn-edge rounded-full border border-slateLine/85 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-mist transition-colors duration-200 hover:border-accentBlue/80 hover:text-white"
             >
               {"<"}
             </button>
@@ -120,7 +120,7 @@ function WorkImageCard({ image, id, fallbackSlides = [] }: WorkImageCardProps) {
                 goNext();
               }}
               aria-label={`Next slide ${id}`}
-              className="rounded-full border border-white/35 bg-black/35 px-2 py-1 text-[10px] text-white backdrop-blur-sm"
+              className="led-btn-edge rounded-full border border-slateLine/85 bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-mist transition-colors duration-200 hover:border-accentBlue/80 hover:text-white"
             >
               {">"}
             </button>
@@ -144,7 +144,7 @@ export function BrandCaseStudy({ entry }: BrandCaseStudyProps) {
   const activeGallery = galleries[0];
 
   return (
-    <article className="rounded-2xl border border-slateLine/75 bg-slatePanel/45 p-6 sm:p-7">
+    <article className="led-card-edge rounded-2xl border border-slateLine/75 bg-slatePanel/45 p-6 sm:p-7">
       <div>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -190,7 +190,7 @@ export function BrandCaseStudy({ entry }: BrandCaseStudyProps) {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-accentBlue/50 bg-accentBlue/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-accentBlueSoft transition-colors duration-200 hover:border-accentBlue hover:text-mist"
+                  className="led-btn-edge rounded-full border border-slateLine/85 bg-slatePanel/45 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-accentBlueSoft transition-colors duration-200 hover:border-accentBlue/85 hover:text-mist"
                 >
                   {link.label}
                 </a>
@@ -200,7 +200,7 @@ export function BrandCaseStudy({ entry }: BrandCaseStudyProps) {
         )}
 
         {entry.notes && (
-          <p className="mt-6 rounded-xl border border-slateLine/75 bg-slatePanel/40 px-4 py-3 text-xs leading-relaxed text-mistSoft">{entry.notes}</p>
+          <p className="led-card-edge mt-6 rounded-xl border border-slateLine/75 bg-slatePanel/40 px-4 py-3 text-xs leading-relaxed text-mistSoft">{entry.notes}</p>
         )}
       </div>
 

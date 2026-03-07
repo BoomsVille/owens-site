@@ -133,7 +133,7 @@ export function WorkShowcase({ entries }: WorkShowcaseProps) {
           </div>
         ))}
         <div className="w-full min-w-full shrink-0 snap-start [scroll-snap-stop:always]">
-          <article className="rounded-2xl border border-dashed border-accentBlue/45 bg-slatePanel/35 p-7">
+          <article className="led-card-edge rounded-2xl border border-dashed border-accentBlue/45 bg-slatePanel/35 p-7">
             <p className="text-xs uppercase tracking-[0.15em] text-accentBlue/85">More Projects</p>
             <h3 className="mt-3 text-2xl font-semibold text-mist">More completed case studies coming next.</h3>
             <p className="mt-4 w-full text-sm leading-relaxed text-mistSoft">
@@ -145,7 +145,7 @@ export function WorkShowcase({ entries }: WorkShowcaseProps) {
 
       {activeEntry?.testimonial && (
         <div className="mt-8">
-          <article className="rounded-xl border border-slateLine/75 bg-slatePanel/45 p-5">
+          <article className="led-card-edge rounded-xl border border-slateLine/75 bg-slatePanel/45 p-5">
             <p className="text-sm leading-relaxed text-mistSoft">“{activeEntry.testimonial.quote}”</p>
             <p className="mt-4 text-xs uppercase tracking-[0.14em] text-accentBlueSoft">{activeEntry.testimonial.name}</p>
           </article>

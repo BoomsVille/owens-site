@@ -4,28 +4,31 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { Sidebar } from "@/components/Sidebar";
 import { WorkShowcase } from "@/components/WorkShowcase";
 import { getCompletedWork } from "@/lib/getCompletedWork";
-import Link from "next/link";
 
 const services = [
   {
     title: "Web Development",
     description:
-      "I design and build fast, modern websites that feel premium, communicate clearly, and turn visitors into enquiries."
+      "I design and build fast, modern websites that feel premium, communicate clearly, and turn visitors into enquiries.",
+    href: "/services/web-development"
   },
   {
     title: "Social Media Management",
     description:
-      "I plan and manage consistent social content that keeps your brand active, relevant, and visible to the right audience."
+      "I plan and manage consistent social content that keeps your brand active, relevant, and visible to the right audience.",
+    href: "/services/social-media-management"
   },
   {
     title: "Photography",
     description:
-      "I produce clean, professional imagery that elevates your brand across websites, campaigns, and social platforms."
+      "I produce clean brand and product photography, including studio send-in product shoots for bars, restaurants, and product-based businesses.",
+    href: "/services/photography"
   },
   {
     title: "Content Creation",
     description:
-      "I create scroll-stopping content built around your message, so your brand looks cohesive and confident everywhere."
+      "I create scroll-stopping content built around your message, so your brand looks cohesive and confident everywhere.",
+    href: "/services/content-creation"
   }
 ];
 
@@ -69,13 +72,6 @@ export default async function Home() {
               title={
                 <>
                   I help brands show up better online.
-                  <Link
-                    href="/desktop"
-                    className="ml-3 hidden translate-y-[-3px] items-center rounded-full border border-accentBlue/75 px-3 py-1 align-middle text-[11px] font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-200 hover:border-accentBlueSoft hover:text-mist sm:inline-flex"
-                    aria-label="Open Mac view"
-                  >
-                    Mac View
-                  </Link>
                 </>
               }
             >
@@ -92,7 +88,7 @@ export default async function Home() {
               </div>
               <div className="mt-8 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 touch-pan-x sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
                 {proofStats.map((stat) => (
-                  <article key={stat.label} className="w-[84%] shrink-0 snap-start rounded-xl border border-slateLine/75 bg-slatePanel/45 p-4 sm:w-auto sm:shrink">
+                  <article key={stat.label} className="led-card-edge w-[84%] shrink-0 snap-start rounded-xl border border-slateLine/75 bg-slatePanel/45 p-4 sm:w-auto sm:shrink">
                     <p className="text-2xl font-semibold text-mist">{stat.value}</p>
                     <p className="mt-1 text-xs uppercase tracking-[0.12em] text-mistSoft">{stat.label}</p>
                   </article>
@@ -104,7 +100,7 @@ export default async function Home() {
               <div className="flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto pb-2 touch-pan-x sm:grid sm:grid-cols-2 sm:auto-rows-fr sm:overflow-visible sm:pb-0">
                 {services.map((service) => (
                   <div key={service.title} className="h-full w-[86%] shrink-0 snap-start sm:w-auto sm:shrink">
-                    <ServiceCard title={service.title} description={service.description} />
+                    <ServiceCard title={service.title} description={service.description} href={service.href} />
                   </div>
                 ))}
               </div>
@@ -117,7 +113,7 @@ export default async function Home() {
             <Section id="process" label="Process" title="How we work together.">
               <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 touch-pan-x sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
                 {processSteps.map((item) => (
-                  <article key={item.step} className="w-[86%] shrink-0 snap-start rounded-xl border border-slateLine/75 bg-slatePanel/45 p-5 sm:w-auto sm:shrink">
+                  <article key={item.step} className="led-card-edge w-[86%] shrink-0 snap-start rounded-xl border border-slateLine/75 bg-slatePanel/45 p-5 sm:w-auto sm:shrink">
                     <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accentBlueSoft">{item.step}</p>
                     <h3 className="mt-3 text-xl font-semibold text-mist">{item.title}</h3>
                     <p className="mt-3 text-sm leading-relaxed text-mistSoft">{item.detail}</p>

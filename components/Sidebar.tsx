@@ -62,7 +62,7 @@ export function Sidebar() {
           </a>
           <a
             href="#contact"
-            className="inline-flex rounded-full border border-accentBlue/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-300 hover:border-accentBlueSoft hover:text-mist"
+            className="led-btn-edge inline-flex rounded-full border border-accentBlue/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-300 hover:border-accentBlueSoft hover:text-mist"
           >
             Start Project
           </a>
