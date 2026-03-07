@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from "react";
 
 type GameId = "snake" | "pong" | "breakout" | "tetris" | "invaders" | "asteroids";
 type ScreenMode = "menu" | "playing";
@@ -381,6 +381,7 @@ export function RetroTvGalaga() {
   const gestureStartRef = useRef<Vec2 | null>(null);
   const joystickPointerIdRef = useRef<number | null>(null);
   const joystickDirectionRef = useRef<ArrowKey | null>(null);
+  const [mobileDirection, setMobileDirection] = useState<ArrowKey | null>(null);
   const [menuIndex, setMenuIndex] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [mode, setMode] = useState<ScreenMode>("menu");
@@ -425,6 +426,19 @@ export function RetroTvGalaga() {
 
   const handleActionRelease = () => {
     if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
+  };
+
+  const handleActionTouchStart = (event: ReactTouchEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (runtimeRef.current.mode === "menu") {
+      tapKey("Enter");
+      return;
+    }
+    if (runtimeRef.current.activeGame === "tetris") {
+      tapKey("ArrowUp");
+      return;
+    }
+    handleInputKeyDown(" ");
   };
 
   const drawMenu = (ctx: CanvasRenderingContext2D, currentIndex: number, currentDifficulty: Difficulty) => {
@@ -532,6 +546,7 @@ export function RetroTvGalaga() {
     if (currentDirection) handleInputKeyUp(currentDirection);
     if (nextDirection) handleInputKeyDown(nextDirection);
     joystickDirectionRef.current = nextDirection;
+    setMobileDirection(nextDirection);
   };
 
   const releaseJoystick = () => {
@@ -540,12 +555,12 @@ export function RetroTvGalaga() {
     setJoystickKnob({ x: 0, y: 0 });
   };
 
-  const updateJoystickFromPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
+  const updateJoystickFromClient = (target: HTMLDivElement, clientX: number, clientY: number) => {
+    const rect = target.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const rawDx = event.clientX - cx;
-    const rawDy = event.clientY - cy;
+    const rawDx = clientX - cx;
+    const rawDy = clientY - cy;
     const maxRadius = 46;
     const length = Math.hypot(rawDx, rawDy) || 1;
     const scale = Math.min(1, maxRadius / length);
@@ -577,6 +592,22 @@ export function RetroTvGalaga() {
   useEffect(() => {
     if (!isMobileControls) releaseJoystick();
   }, [isMobileControls]);
+
+  useEffect(() => {
+    if (!isMobileControls || mode !== "menu" || !mobileDirection) return;
+    const timeout = window.setTimeout(() => {
+      const interval = window.setInterval(() => {
+        handleInputKeyDown(mobileDirection);
+      }, 120);
+      (timeout as unknown as { __interval?: number }).__interval = interval;
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeout);
+      const maybeInterval = (timeout as unknown as { __interval?: number }).__interval;
+      if (maybeInterval) window.clearInterval(maybeInterval);
+    };
+  }, [isMobileControls, mode, mobileDirection]);
 
   useEffect(() => {
     const keyDown = (event: KeyboardEvent) => {
@@ -1435,26 +1466,36 @@ export function RetroTvGalaga() {
                     onPointerDown={(event) => {
                       event.preventDefault();
                       joystickPointerIdRef.current = event.pointerId;
-                      event.currentTarget.setPointerCapture(event.pointerId);
-                      updateJoystickFromPointer(event);
+                      if (event.currentTarget.setPointerCapture) event.currentTarget.setPointerCapture(event.pointerId);
+                      updateJoystickFromClient(event.currentTarget, event.clientX, event.clientY);
                     }}
                     onPointerMove={(event) => {
                       if (joystickPointerIdRef.current !== event.pointerId) return;
-                      updateJoystickFromPointer(event);
+                      updateJoystickFromClient(event.currentTarget, event.clientX, event.clientY);
                     }}
                     onPointerUp={(event) => {
                       if (joystickPointerIdRef.current !== event.pointerId) return;
                       releaseJoystick();
                     }}
                     onPointerCancel={releaseJoystick}
-                    onPointerLeave={(event) => {
-                      if (joystickPointerIdRef.current !== event.pointerId) return;
-                      releaseJoystick();
+                    onTouchStart={(event: ReactTouchEvent<HTMLDivElement>) => {
+                      event.preventDefault();
+                      const touch = event.touches[0];
+                      if (!touch) return;
+                      updateJoystickFromClient(event.currentTarget, touch.clientX, touch.clientY);
                     }}
+                    onTouchMove={(event: ReactTouchEvent<HTMLDivElement>) => {
+                      event.preventDefault();
+                      const touch = event.touches[0];
+                      if (!touch) return;
+                      updateJoystickFromClient(event.currentTarget, touch.clientX, touch.clientY);
+                    }}
+                    onTouchEnd={releaseJoystick}
+                    onTouchCancel={releaseJoystick}
                   >
                     <div className="absolute left-1/2 top-1/2 h-[88px] w-[88px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
                     <div
-                      className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1d1d1d] bg-[#2b2b2b] shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
+                      className="pointer-events-none absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1d1d1d] bg-[#2b2b2b] shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
                       style={{ transform: `translate(calc(-50% + ${joystickKnob.x}px), calc(-50% + ${joystickKnob.y}px))` }}
                     />
                   </div>
@@ -1468,6 +1509,9 @@ export function RetroTvGalaga() {
                       onPointerUp={handleActionRelease}
                       onPointerCancel={handleActionRelease}
                       onPointerLeave={handleActionRelease}
+                      onTouchStart={handleActionTouchStart}
+                      onTouchEnd={handleActionRelease}
+                      onTouchCancel={handleActionRelease}
                     >
                       {mode === "menu" ? "GO" : "A"}
                     </button>
