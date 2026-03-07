@@ -11,6 +11,8 @@ type WorkShowcaseProps = {
 
 export function WorkShowcase({ entries }: WorkShowcaseProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const touchStartLeftRef = useRef(0);
+  const touchStartIndexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [trackHeight, setTrackHeight] = useState<number | null>(null);
 
@@ -54,6 +56,56 @@ export function WorkShowcase({ entries }: WorkShowcaseProps) {
     return () => {
       container.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const isMobileViewport = () => window.matchMedia("(max-width: 767px)").matches;
+
+    const onTouchStart = () => {
+      if (!isMobileViewport()) return;
+      touchStartLeftRef.current = container.scrollLeft;
+
+      const children = Array.from(container.children) as HTMLElement[];
+      const nearestIndex = children.reduce(
+        (best, child, idx) => {
+          const distance = Math.abs(child.offsetLeft - container.scrollLeft);
+          return distance < best.distance ? { index: idx, distance } : best;
+        },
+        { index: 0, distance: Number.POSITIVE_INFINITY }
+      ).index;
+
+      touchStartIndexRef.current = nearestIndex;
+    };
+
+    const onTouchEnd = () => {
+      if (!isMobileViewport()) return;
+
+      const delta = container.scrollLeft - touchStartLeftRef.current;
+      if (Math.abs(delta) < 8) return;
+
+      const direction = delta > 0 ? 1 : -1;
+      const children = Array.from(container.children) as HTMLElement[];
+      const maxIndex = Math.max(0, children.length - 1);
+      const targetIndex = Math.max(0, Math.min(maxIndex, touchStartIndexRef.current + direction));
+      const target = children[targetIndex];
+      if (!target) return;
+
+      container.scrollTo({
+        left: target.offsetLeft,
+        behavior: "smooth"
+      });
+    };
+
+    container.addEventListener("touchstart", onTouchStart, { passive: true });
+    container.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 

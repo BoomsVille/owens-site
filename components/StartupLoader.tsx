@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 export function StartupLoader() {
   const [visible, setVisible] = useState(true);
   const [exiting, setExiting] = useState(false);
-  const [countdown, setCountdown] = useState(2.0);
+  const [countdown, setCountdown] = useState(1.5);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const countdownStart = performance.now();
-    const countdownDuration = 2000;
+    const countdownDuration = 1500;
     const interval = window.setInterval(() => {
       const elapsed = performance.now() - countdownStart;
       const remainingMs = Math.max(0, countdownDuration - elapsed);
@@ -21,12 +21,12 @@ export function StartupLoader() {
 
     const exitTimer = window.setTimeout(() => {
       setExiting(true);
-    }, 2000);
+    }, 1500);
 
     const unmountTimer = window.setTimeout(() => {
       setVisible(false);
       document.body.style.overflow = previousOverflow;
-    }, 2300);
+    }, 1800);
 
     return () => {
       window.clearInterval(interval);
