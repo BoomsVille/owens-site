@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import { SiteFlyingParticles } from "@/components/SiteFlyingParticles";
 import { StartupLoader } from "@/components/StartupLoader";
 import { getMetadataBase } from "@/lib/siteUrl";
 
@@ -64,8 +65,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <div className="pointer-events-none fixed inset-0 z-0">
+          <SiteFlyingParticles className="h-full w-full" />
+        </div>
+        <div className="relative z-10">
         <StartupLoader />
         {children}
+        </div>
       </body>
     </html>
   );
