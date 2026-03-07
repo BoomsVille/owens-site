@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 type GameId = "snake" | "pong" | "breakout" | "tetris" | "invaders" | "asteroids";
 type ScreenMode = "menu" | "playing";
 type Difficulty = "easy" | "normal" | "hard";
+type ArrowKey = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight";
 
 type Vec2 = { x: number; y: number };
 
@@ -378,11 +379,14 @@ export function RetroTvGalaga() {
   const keysRef = useRef<Record<string, boolean>>({});
   const runtimeRef = useRef<RuntimeState>(createRuntime("normal"));
   const gestureStartRef = useRef<Vec2 | null>(null);
+  const joystickPointerIdRef = useRef<number | null>(null);
+  const joystickDirectionRef = useRef<ArrowKey | null>(null);
   const [menuIndex, setMenuIndex] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [mode, setMode] = useState<ScreenMode>("menu");
   const [activeGame, setActiveGame] = useState<GameId | null>(null);
   const [isMobileControls, setIsMobileControls] = useState(false);
+  const [joystickKnob, setJoystickKnob] = useState({ x: 0, y: 0 });
   const [statusText, setStatusText] = useState("Use arrows + Enter to launch. Left/Right changes difficulty.");
   const actionAriaLabel =
     mode === "menu" ? "Start" : activeGame === "tetris" ? "Rotate" : activeGame === "invaders" || activeGame === "asteroids" ? "Fire" : "Action";
@@ -522,12 +526,57 @@ export function RetroTvGalaga() {
     keysRef.current[key.toLowerCase()] = false;
   };
 
+  const setJoystickDirection = (nextDirection: ArrowKey | null) => {
+    const currentDirection = joystickDirectionRef.current;
+    if (currentDirection === nextDirection) return;
+    if (currentDirection) handleInputKeyUp(currentDirection);
+    if (nextDirection) handleInputKeyDown(nextDirection);
+    joystickDirectionRef.current = nextDirection;
+  };
+
+  const releaseJoystick = () => {
+    setJoystickDirection(null);
+    joystickPointerIdRef.current = null;
+    setJoystickKnob({ x: 0, y: 0 });
+  };
+
+  const updateJoystickFromPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const rawDx = event.clientX - cx;
+    const rawDy = event.clientY - cy;
+    const maxRadius = 46;
+    const length = Math.hypot(rawDx, rawDy) || 1;
+    const scale = Math.min(1, maxRadius / length);
+    const dx = rawDx * scale;
+    const dy = rawDy * scale;
+    const deadZone = 12;
+
+    setJoystickKnob({ x: dx, y: dy });
+
+    if (Math.abs(dx) < deadZone && Math.abs(dy) < deadZone) {
+      setJoystickDirection(null);
+      return;
+    }
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      setJoystickDirection(dx > 0 ? "ArrowRight" : "ArrowLeft");
+    } else {
+      setJoystickDirection(dy > 0 ? "ArrowDown" : "ArrowUp");
+    }
+  };
+
   useEffect(() => {
     const detect = () => setIsMobileControls(window.matchMedia("(max-width: 640px), (pointer: coarse)").matches);
     detect();
     window.addEventListener("resize", detect);
     return () => window.removeEventListener("resize", detect);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileControls) releaseJoystick();
+  }, [isMobileControls]);
 
   useEffect(() => {
     const keyDown = (event: KeyboardEvent) => {
@@ -1380,38 +1429,41 @@ export function RetroTvGalaga() {
             <div className="retro-tv-badge">RETRO ARCADE</div>
             <div className="mt-1 rounded-md border border-[#6c6b6a] bg-[#c9c8c4] p-2">
               {isMobileControls ? (
-                <div className="mx-auto h-[132px] w-[132px]">
-                  <div className="relative h-full w-full rounded-full border border-[#2f2f2f] bg-[#3a3a3a] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                    <button
-                      type="button"
-                      className="absolute left-1/2 top-1.5 h-10 w-10 -translate-x-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        handleInputKeyDown("ArrowUp");
-                      }}
-                      onPointerUp={() => handleInputKeyUp("ArrowUp")}
-                      onPointerCancel={() => handleInputKeyUp("ArrowUp")}
-                      onPointerLeave={() => handleInputKeyUp("ArrowUp")}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="absolute left-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        handleInputKeyDown("ArrowLeft");
-                      }}
-                      onPointerUp={() => handleInputKeyUp("ArrowLeft")}
-                      onPointerCancel={() => handleInputKeyUp("ArrowLeft")}
-                      onPointerLeave={() => handleInputKeyUp("ArrowLeft")}
-                    >
-                      ←
-                    </button>
+                <div className="mx-auto flex items-center justify-center gap-4">
+                  <div
+                    className="relative h-[146px] w-[146px] touch-none rounded-full border border-[#2f2f2f] bg-[#3a3a3a] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      joystickPointerIdRef.current = event.pointerId;
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      updateJoystickFromPointer(event);
+                    }}
+                    onPointerMove={(event) => {
+                      if (joystickPointerIdRef.current !== event.pointerId) return;
+                      updateJoystickFromPointer(event);
+                    }}
+                    onPointerUp={(event) => {
+                      if (joystickPointerIdRef.current !== event.pointerId) return;
+                      releaseJoystick();
+                    }}
+                    onPointerCancel={releaseJoystick}
+                    onPointerLeave={(event) => {
+                      if (joystickPointerIdRef.current !== event.pointerId) return;
+                      releaseJoystick();
+                    }}
+                  >
+                    <div className="absolute left-1/2 top-1/2 h-[88px] w-[88px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
+                    <div
+                      className="absolute left-1/2 top-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1d1d1d] bg-[#2b2b2b] shadow-[0_3px_10px_rgba(0,0,0,0.35)]"
+                      style={{ transform: `translate(calc(-50% + ${joystickKnob.x}px), calc(-50% + ${joystickKnob.y}px))` }}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
                     <button
                       type="button"
                       aria-label={actionAriaLabel}
-                      className="absolute left-1/2 top-1/2 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#5a2b4f] bg-gradient-to-b from-[#b45ea1] to-[#8a3e78] text-xs font-bold text-[#fff2fc]"
+                      className="h-16 w-16 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#c068ad] to-[#91417e] text-sm font-bold text-[#fff2fc] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
                       onPointerDown={handleActionPress}
                       onPointerUp={handleActionRelease}
                       onPointerCancel={handleActionRelease}
@@ -1421,29 +1473,16 @@ export function RetroTvGalaga() {
                     </button>
                     <button
                       type="button"
-                      className="absolute bottom-1.5 left-1/2 h-10 w-10 -translate-x-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        handleInputKeyDown("ArrowDown");
+                      className="rounded-full border border-[#5a5c65] bg-[#878b96] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
+                      onClick={() => {
+                        if (mode === "menu") tapKey("Enter");
+                        else {
+                          handleInputKeyDown("Escape");
+                          handleInputKeyUp("Escape");
+                        }
                       }}
-                      onPointerUp={() => handleInputKeyUp("ArrowDown")}
-                      onPointerCancel={() => handleInputKeyUp("ArrowDown")}
-                      onPointerLeave={() => handleInputKeyUp("ArrowDown")}
                     >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      className="absolute right-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        handleInputKeyDown("ArrowRight");
-                      }}
-                      onPointerUp={() => handleInputKeyUp("ArrowRight")}
-                      onPointerCancel={() => handleInputKeyUp("ArrowRight")}
-                      onPointerLeave={() => handleInputKeyUp("ArrowRight")}
-                    >
-                      →
+                      {mode === "menu" ? "Start" : "Menu"}
                     </button>
                   </div>
                 </div>
