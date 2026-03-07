@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 type GameId = "snake" | "pong" | "breakout" | "tetris" | "invaders" | "asteroids";
 type ScreenMode = "menu" | "playing";
@@ -382,6 +382,7 @@ export function RetroTvGalaga() {
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [mode, setMode] = useState<ScreenMode>("menu");
   const [activeGame, setActiveGame] = useState<GameId | null>(null);
+  const [isMobileControls, setIsMobileControls] = useState(false);
   const [statusText, setStatusText] = useState("Use arrows + Enter to launch. Left/Right changes difficulty.");
   const actionAriaLabel =
     mode === "menu" ? "Start" : activeGame === "tetris" ? "Rotate" : activeGame === "invaders" || activeGame === "asteroids" ? "Fire" : "Action";
@@ -403,6 +404,23 @@ export function RetroTvGalaga() {
   const tapKey = (key: string) => {
     handleInputKeyDown(key);
     window.setTimeout(() => handleInputKeyUp(key), 0);
+  };
+
+  const handleActionPress = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (runtimeRef.current.mode === "menu") {
+      tapKey("Enter");
+      return;
+    }
+    if (runtimeRef.current.activeGame === "tetris") {
+      tapKey("ArrowUp");
+      return;
+    }
+    handleInputKeyDown(" ");
+  };
+
+  const handleActionRelease = () => {
+    if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
   };
 
   const drawMenu = (ctx: CanvasRenderingContext2D, currentIndex: number, currentDifficulty: Difficulty) => {
@@ -503,6 +521,13 @@ export function RetroTvGalaga() {
   const handleInputKeyUp = (key: string) => {
     keysRef.current[key.toLowerCase()] = false;
   };
+
+  useEffect(() => {
+    const detect = () => setIsMobileControls(window.matchMedia("(max-width: 640px), (pointer: coarse)").matches);
+    detect();
+    window.addEventListener("resize", detect);
+    return () => window.removeEventListener("resize", detect);
+  }, []);
 
   useEffect(() => {
     const keyDown = (event: KeyboardEvent) => {
@@ -1354,126 +1379,181 @@ export function RetroTvGalaga() {
           <div className="retro-tv-controls">
             <div className="retro-tv-badge">RETRO ARCADE</div>
             <div className="mt-1 rounded-md border border-[#6c6b6a] bg-[#c9c8c4] p-2">
-              <div className="grid grid-cols-[82px_92px] justify-center gap-3">
-                <div className="relative h-[76px] w-[76px]">
-                  <button
-                    type="button"
-                    className="absolute left-1/2 top-0 h-7 w-7 -translate-x-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      handleInputKeyDown("ArrowUp");
-                    }}
-                    onPointerUp={() => handleInputKeyUp("ArrowUp")}
-                    onPointerCancel={() => handleInputKeyUp("ArrowUp")}
-                    onPointerLeave={() => handleInputKeyUp("ArrowUp")}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute left-0 top-1/2 h-7 w-7 -translate-y-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      handleInputKeyDown("ArrowLeft");
-                    }}
-                    onPointerUp={() => handleInputKeyUp("ArrowLeft")}
-                    onPointerCancel={() => handleInputKeyUp("ArrowLeft")}
-                    onPointerLeave={() => handleInputKeyUp("ArrowLeft")}
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      handleInputKeyDown("ArrowDown");
-                    }}
-                    onPointerUp={() => handleInputKeyUp("ArrowDown")}
-                    onPointerCancel={() => handleInputKeyUp("ArrowDown")}
-                    onPointerLeave={() => handleInputKeyUp("ArrowDown")}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="absolute right-0 top-1/2 h-7 w-7 -translate-y-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
-                    onPointerDown={(event) => {
-                      event.preventDefault();
-                      handleInputKeyDown("ArrowRight");
-                    }}
-                    onPointerUp={() => handleInputKeyUp("ArrowRight")}
-                    onPointerCancel={() => handleInputKeyUp("ArrowRight")}
-                    onPointerLeave={() => handleInputKeyUp("ArrowRight")}
-                  >
-                    →
-                  </button>
-                </div>
-
-                <div className="grid content-start gap-2">
-                  <div className="grid grid-cols-2 gap-2">
+              {isMobileControls ? (
+                <div className="mx-auto h-[132px] w-[132px]">
+                  <div className="relative h-full w-full rounded-full border border-[#2f2f2f] bg-[#3a3a3a] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
                     <button
                       type="button"
-                      className="h-9 w-9 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#b45ea1] to-[#8a3e78] text-[10px] font-bold text-[#f3d9ed] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                      className="absolute left-1/2 top-1.5 h-10 w-10 -translate-x-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleInputKeyDown("ArrowUp");
+                      }}
+                      onPointerUp={() => handleInputKeyUp("ArrowUp")}
+                      onPointerCancel={() => handleInputKeyUp("ArrowUp")}
+                      onPointerLeave={() => handleInputKeyUp("ArrowUp")}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute left-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleInputKeyDown("ArrowLeft");
+                      }}
+                      onPointerUp={() => handleInputKeyUp("ArrowLeft")}
+                      onPointerCancel={() => handleInputKeyUp("ArrowLeft")}
+                      onPointerLeave={() => handleInputKeyUp("ArrowLeft")}
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={actionAriaLabel}
+                      className="absolute left-1/2 top-1/2 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#5a2b4f] bg-gradient-to-b from-[#b45ea1] to-[#8a3e78] text-xs font-bold text-[#fff2fc]"
+                      onPointerDown={handleActionPress}
+                      onPointerUp={handleActionRelease}
+                      onPointerCancel={handleActionRelease}
+                      onPointerLeave={handleActionRelease}
+                    >
+                      {mode === "menu" ? "GO" : "A"}
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute bottom-1.5 left-1/2 h-10 w-10 -translate-x-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleInputKeyDown("ArrowDown");
+                      }}
+                      onPointerUp={() => handleInputKeyUp("ArrowDown")}
+                      onPointerCancel={() => handleInputKeyUp("ArrowDown")}
+                      onPointerLeave={() => handleInputKeyUp("ArrowDown")}
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute right-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-full border border-[#1c1c1c] bg-[#2b2b2b] text-lg font-bold text-[#d5d5d5]"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        handleInputKeyDown("ArrowRight");
+                      }}
+                      onPointerUp={() => handleInputKeyUp("ArrowRight")}
+                      onPointerCancel={() => handleInputKeyUp("ArrowRight")}
+                      onPointerLeave={() => handleInputKeyUp("ArrowRight")}
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-[82px_92px] justify-center gap-3">
+                    <div className="relative h-[76px] w-[76px]">
+                      <button
+                        type="button"
+                        className="absolute left-1/2 top-0 h-7 w-7 -translate-x-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          handleInputKeyDown("ArrowUp");
+                        }}
+                        onPointerUp={() => handleInputKeyUp("ArrowUp")}
+                        onPointerCancel={() => handleInputKeyUp("ArrowUp")}
+                        onPointerLeave={() => handleInputKeyUp("ArrowUp")}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute left-0 top-1/2 h-7 w-7 -translate-y-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          handleInputKeyDown("ArrowLeft");
+                        }}
+                        onPointerUp={() => handleInputKeyUp("ArrowLeft")}
+                        onPointerCancel={() => handleInputKeyUp("ArrowLeft")}
+                        onPointerLeave={() => handleInputKeyUp("ArrowLeft")}
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          handleInputKeyDown("ArrowDown");
+                        }}
+                        onPointerUp={() => handleInputKeyUp("ArrowDown")}
+                        onPointerCancel={() => handleInputKeyUp("ArrowDown")}
+                        onPointerLeave={() => handleInputKeyUp("ArrowDown")}
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute right-0 top-1/2 h-7 w-7 -translate-y-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          handleInputKeyDown("ArrowRight");
+                        }}
+                        onPointerUp={() => handleInputKeyUp("ArrowRight")}
+                        onPointerCancel={() => handleInputKeyUp("ArrowRight")}
+                        onPointerLeave={() => handleInputKeyUp("ArrowRight")}
+                      >
+                        →
+                      </button>
+                    </div>
+
+                    <div className="grid content-start gap-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          className="h-9 w-9 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#b45ea1] to-[#8a3e78] text-[10px] font-bold text-[#f3d9ed] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                          onClick={() => {
+                            handleInputKeyDown("Escape");
+                            handleInputKeyUp("Escape");
+                          }}
+                        >
+                          B
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={actionAriaLabel}
+                          className="h-9 w-9 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#c068ad] to-[#91417e] text-[10px] font-bold text-[#fff2fc] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                          onPointerDown={handleActionPress}
+                          onPointerUp={handleActionRelease}
+                          onPointerCancel={handleActionRelease}
+                          onPointerLeave={handleActionRelease}
+                        >
+                          A
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-center gap-1.5">
+                    <button
+                      type="button"
+                      className="rounded-full border border-[#5a5c65] bg-[#878b96] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
                       onClick={() => {
                         handleInputKeyDown("Escape");
                         handleInputKeyUp("Escape");
                       }}
                     >
-                      B
+                      Select
                     </button>
                     <button
                       type="button"
-                      aria-label={actionAriaLabel}
-                      className="h-9 w-9 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#c068ad] to-[#91417e] text-[10px] font-bold text-[#fff2fc] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-                      onPointerDown={(event) => {
-                        event.preventDefault();
-                        if (runtimeRef.current.mode === "menu") {
-                          tapKey("Enter");
-                          return;
-                        }
-                        if (runtimeRef.current.activeGame === "tetris") {
-                          tapKey("ArrowUp");
-                        } else {
-                          handleInputKeyDown(" ");
-                        }
-                      }}
-                      onPointerUp={() => {
-                        if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
-                      }}
-                      onPointerCancel={() => {
-                        if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
-                      }}
-                      onPointerLeave={() => {
-                        if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
+                      className="rounded-full border border-[#5a5c65] bg-[#878b96] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
+                      onClick={() => {
+                        tapKey("Enter");
                       }}
                     >
-                      A
+                      Start
                     </button>
                   </div>
-                </div>
-              </div>
-              <div className="mt-2 flex justify-center gap-1.5">
-                <button
-                  type="button"
-                  className="rounded-full border border-[#5a5c65] bg-[#878b96] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
-                  onClick={() => {
-                    handleInputKeyDown("Escape");
-                    handleInputKeyUp("Escape");
-                  }}
-                >
-                  Select
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-[#5a5c65] bg-[#878b96] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
-                  onClick={() => {
-                    tapKey("Enter");
-                  }}
-                >
-                  Start
-                </button>
-              </div>
+                </>
+              )}
             </div>
             <div className="retro-tv-grille">
               {Array.from({ length: 10 }).map((_, idx) => (
