@@ -72,15 +72,15 @@ export function WorkShowcase({ entries }: WorkShowcaseProps) {
 
       <div
         ref={scrollRef}
-        className="flex items-start snap-x snap-mandatory gap-5 overflow-x-auto overflow-y-hidden pb-2 transition-[height] duration-300"
+        className="flex items-start snap-x snap-mandatory gap-0 overflow-x-auto overflow-y-hidden pb-2 transition-[height] duration-300"
         style={trackHeight ? { height: `${trackHeight}px` } : undefined}
       >
         {entries.map((entry) => (
-          <div key={entry.slug} className="min-w-full snap-start">
+          <div key={entry.slug} className="w-full min-w-full shrink-0 snap-start [scroll-snap-stop:always]">
             <BrandCaseStudy entry={entry} />
           </div>
         ))}
-        <div className="min-w-full snap-start">
+        <div className="w-full min-w-full shrink-0 snap-start [scroll-snap-stop:always]">
           <article className="rounded-2xl border border-dashed border-accentBlue/45 bg-slatePanel/35 p-7">
             <p className="text-xs uppercase tracking-[0.15em] text-accentBlue/85">More Projects</p>
             <h3 className="mt-3 text-2xl font-semibold text-mist">More completed case studies coming next.</h3>

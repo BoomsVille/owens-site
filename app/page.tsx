@@ -31,9 +31,9 @@ const services = [
 ];
 
 const proofStats = [
-  { value: "35+", label: "Projects Delivered" },
-  { value: "12+", label: "Industries Supported" },
-  { value: "92%", label: "Repeat Client Rate" }
+  { value: "Web + Social", label: "Integrated Delivery" },
+  { value: "Brand-First", label: "Creative Direction" },
+  { value: "Hands-On", label: "Single Point Of Contact" }
 ];
 
 const processSteps = [

@@ -16,9 +16,11 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(1100px 600px at 82% -8%, rgba(102, 134, 192, 0.34), transparent 55%),
-    radial-gradient(900px 480px at 8% 104%, rgba(79, 112, 168, 0.28), transparent 56%),
-    #101a2d;
+    linear-gradient(160deg, #071021 0%, #0f1f3b 46%, #08142a 100%),
+    radial-gradient(900px 540px at 86% -8%, rgba(148, 181, 238, 0.34), transparent 54%),
+    radial-gradient(740px 420px at 10% 102%, rgba(82, 126, 193, 0.28), transparent 58%),
+    radial-gradient(500px 300px at 50% 40%, rgba(10, 20, 42, 0.55), transparent 70%),
+    #0a1428;
   color: #d8e3f6;
 }
 
@@ -192,5 +194,137 @@ a:visited {
   .retro-tv-knob-small {
     justify-self: center;
     width: 3.1rem;
+  }
+}
+
+.startup-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 82% 10%, rgba(126, 162, 221, 0.26), transparent 44%),
+    radial-gradient(circle at 12% 88%, rgba(78, 114, 172, 0.23), transparent 48%),
+    #080f1c;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 260ms ease,
+    visibility 260ms ease;
+}
+
+.startup-loader-overlay--exit {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.startup-loader-shell {
+  width: min(88vw, 460px);
+  border-radius: 1.2rem;
+  border: 1px solid rgba(125, 162, 222, 0.42);
+  background: linear-gradient(160deg, rgba(16, 27, 49, 0.96), rgba(8, 14, 28, 0.98));
+  padding: 1.3rem 1.2rem;
+  box-shadow:
+    0 28px 48px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(125, 162, 222, 0.17);
+}
+
+.startup-loader-kicker {
+  margin: 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(154, 186, 238, 0.88);
+}
+
+.startup-loader-title {
+  margin: 0.45rem 0 0;
+  font-size: clamp(1.8rem, 6.4vw, 2.7rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #eaf3ff;
+  text-shadow: 0 0 20px rgba(145, 182, 243, 0.26);
+}
+
+.startup-loader-track {
+  margin-top: 1rem;
+  height: 0.52rem;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 162, 222, 0.55);
+  background: rgba(90, 124, 180, 0.2);
+}
+
+.startup-loader-fill {
+  display: block;
+  height: 100%;
+  width: 42%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8eb2f1, #5d86d1);
+  animation: startup-loader-sweep 900ms ease-in-out infinite alternate;
+}
+
+.startup-loader-bars {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.startup-loader-bars span {
+  height: 0.3rem;
+  flex: 1;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(124, 161, 220, 0.2), rgba(124, 161, 220, 0.88));
+  animation: startup-loader-bar 700ms ease-in-out infinite;
+}
+
+.startup-loader-bars span:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.startup-loader-bars span:nth-child(3) {
+  animation-delay: 180ms;
+}
+
+.startup-loader-bars span:nth-child(4) {
+  animation-delay: 270ms;
+}
+
+.startup-loader-countdown {
+  margin: 0.65rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(202, 223, 255, 0.9);
+}
+
+@keyframes startup-loader-sweep {
+  0% {
+    transform: translateX(-22%);
+  }
+  100% {
+    transform: translateX(138%);
+  }
+}
+
+@keyframes startup-loader-bar {
+  0%,
+  100% {
+    transform: scaleX(0.65);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-loader-fill,
+  .startup-loader-bars span {
+    animation: none;
   }
 }

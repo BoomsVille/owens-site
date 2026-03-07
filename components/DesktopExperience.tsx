@@ -157,7 +157,7 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
     ]
       .filter(Boolean)
       .join("\n");
-    const mailto = `mailto:hello@owensmith.co.uk?subject=${encodeURIComponent(contactSubject || "New project enquiry")}&body=${encodeURIComponent(lines)}`;
+    const mailto = `mailto:owen@freelancedesign.co.uk?subject=${encodeURIComponent(contactSubject || "New project enquiry")}&body=${encodeURIComponent(lines)}`;
     window.location.href = mailto;
   };
 
@@ -474,7 +474,7 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
                       <form onSubmit={submitContactEmail} className="mt-4 space-y-3">
                         <div className="rounded-lg border border-slate-300 bg-white px-3 py-2">
                           <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">To</label>
-                          <p className="mt-1 text-sm text-slate-800">hello@owensmith.co.uk</p>
+                          <p className="mt-1 text-sm text-slate-800">owen@freelancedesign.co.uk</p>
                         </div>
                         <div className="rounded-lg border border-slate-300 bg-white px-3 py-2">
                           <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Your Name</label>

@@ -57,8 +57,8 @@ export function Sidebar() {
           </a>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-4">
-          <a href="mailto:hello@yourname.com" className="text-sm text-accentBlueSoft transition-colors duration-300 hover:text-mist">
-            hello@yourname.com
+          <a href="mailto:owen@freelancedesign.co.uk" className="text-sm text-accentBlueSoft transition-colors duration-300 hover:text-mist">
+            owen@freelancedesign.co.uk
           </a>
           <a
             href="#contact"

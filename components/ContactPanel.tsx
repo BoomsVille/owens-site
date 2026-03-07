@@ -27,7 +27,7 @@ export function ContactPanel() {
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <a
-            href="mailto:hello@yourname.com"
+            href="mailto:owen@freelancedesign.co.uk"
             className="inline-flex rounded-full border border-accentBlue/80 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-300 hover:border-accentBlueSoft hover:text-mist"
           >
             Start Your Enquiry
