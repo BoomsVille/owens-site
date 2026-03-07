@@ -1,5 +1,4 @@
 import { ContactPanel } from "@/components/ContactPanel";
-import { ScrollSloth } from "@/components/ScrollSloth";
 import { Section } from "@/components/Section";
 import { ServiceCard } from "@/components/ServiceCard";
 import { Sidebar } from "@/components/Sidebar";
@@ -59,7 +58,6 @@ export default async function Home() {
 
   return (
     <>
-      <ScrollSloth />
       <div className="w-full px-6 pb-16 pt-8 sm:px-10 lg:px-12 lg:pb-20 lg:pt-0">
         <div className="grid gap-12 lg:grid-cols-[minmax(280px,380px)_1fr] lg:gap-20">
           <Sidebar />
