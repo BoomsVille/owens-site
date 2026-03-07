@@ -12,7 +12,7 @@ export function Section({ id, label, title, visualTitle = false, children }: Sec
   return (
     <section
       id={id}
-      className="section-scroll relative py-14 first:pt-2 last:pb-0 sm:py-20"
+      className="section-scroll relative border-t border-slateLine/70 py-14 first:border-t-0 first:pt-2 last:pb-0 sm:py-20"
     >
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accentBlue/85">{label}</p>
       {visualTitle ? (
