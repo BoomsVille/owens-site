@@ -1,0 +1,196 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 600px at 82% -8%, rgba(102, 134, 192, 0.34), transparent 55%),
+    radial-gradient(900px 480px at 8% 104%, rgba(79, 112, 168, 0.28), transparent 56%),
+    #101a2d;
+  color: #d8e3f6;
+}
+
+a,
+a:visited {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(125, 162, 222, 0.35);
+  color: #ebf3ff;
+}
+
+.section-scroll {
+  scroll-margin-top: 5rem;
+}
+
+.nav-link {
+  position: relative;
+  width: fit-content;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.35rem;
+  width: 0;
+  height: 1px;
+  background: rgba(150, 181, 231, 0.88);
+  transition: width 220ms ease;
+}
+
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  width: 100%;
+}
+
+.retro-tv-shell {
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+  background: linear-gradient(140deg, #4f311f, #7b5334 32%, #5e3b25 58%, #2f1d12);
+  box-shadow:
+    0 24px 44px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(41, 23, 13, 0.65);
+}
+
+.retro-tv-chassis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 148px;
+  gap: 0.75rem;
+  padding: 0.65rem;
+  border-radius: 0.35rem;
+  background: linear-gradient(180deg, #e7e3dc, #aeafa9 58%, #8d8b86);
+  border: 1px solid #6d6d68;
+}
+
+.retro-tv-screen-wrap {
+  padding: 0.45rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(160deg, #b5b5b1, #eceae4 42%, #8d8c88 86%);
+  border: 1px solid #6f6f6a;
+}
+
+.retro-tv-bezel {
+  padding: 0.9rem;
+  border-radius: 2.2rem;
+  background: linear-gradient(150deg, #efece7, #afafa9 44%, #9d9e99 72%, #dbd8d2);
+  box-shadow:
+    inset -4px -5px 10px rgba(66, 66, 64, 0.45),
+    inset 3px 4px 12px rgba(255, 255, 255, 0.42);
+}
+
+.retro-tv-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.8rem;
+  border: 2px solid #675f58;
+  background: #000;
+}
+
+.retro-tv-screen canvas {
+  display: block;
+}
+
+.retro-tv-glare {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 8%, rgba(255, 255, 255, 0.2), transparent 34%),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.22));
+}
+
+.retro-tv-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.4rem;
+  border-radius: 0.28rem;
+  background: linear-gradient(180deg, #d9d9d6, #a8a8a4);
+  border: 1px solid #6f6f6a;
+}
+
+.retro-tv-badge {
+  width: 100%;
+  border-radius: 0.2rem;
+  border: 1px solid #646567;
+  background: linear-gradient(180deg, #7a7e86, #4e535b);
+  color: #e9eef9;
+  padding: 0.3rem 0.1rem;
+  text-align: center;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+}
+
+.retro-tv-knob {
+  width: 4.4rem;
+  aspect-ratio: 1/1;
+  border-radius: 999px;
+  border: 2px solid #5c6168;
+  background:
+    radial-gradient(circle at 30% 28%, #f5f6f8 0, #9b9fa5 42%, #565b62 75%, #2a2f36 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(230, 232, 237, 0.28),
+    0 3px 5px rgba(0, 0, 0, 0.34);
+}
+
+.retro-tv-knob-small {
+  width: 3.5rem;
+}
+
+.retro-tv-grille {
+  margin-top: auto;
+  width: 100%;
+  padding: 0.45rem 0.35rem;
+  border-radius: 0.2rem;
+  border: 1px solid #7f7f79;
+  background: #d6d4cd;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.retro-tv-grille span {
+  height: 1px;
+  background: rgba(77, 79, 83, 0.8);
+}
+
+@media (max-width: 640px) {
+  .retro-tv-chassis {
+    grid-template-columns: 1fr;
+  }
+
+  .retro-tv-controls {
+    margin-top: 0.45rem;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .retro-tv-badge,
+  .retro-tv-grille {
+    grid-column: span 3;
+  }
+
+  .retro-tv-knob,
+  .retro-tv-knob-small {
+    justify-self: center;
+    width: 3.1rem;
+  }
+}
