@@ -16,7 +16,9 @@ type SnakeState = {
   timer: number;
   stepMs: number;
   score: number;
+  level: number;
   over: boolean;
+  won: boolean;
 };
 
 type PongState = {
@@ -26,6 +28,8 @@ type PongState = {
   vel: Vec2;
   scoreL: number;
   scoreR: number;
+  level: number;
+  rallyHits: number;
 };
 
 type BreakoutState = {
@@ -34,8 +38,10 @@ type BreakoutState = {
   vel: Vec2;
   bricks: boolean[][];
   score: number;
+  level: number;
   lives: number;
   over: boolean;
+  won: boolean;
 };
 
 type TetrisPiece = {
@@ -51,7 +57,9 @@ type TetrisState = {
   timer: number;
   speed: number;
   score: number;
+  level: number;
   over: boolean;
+  won: boolean;
 };
 
 type InvaderEnemy = { x: number; y: number; w: number; h: number; alive: boolean };
@@ -63,9 +71,11 @@ type InvaderState = {
   shots: Shot[];
   dir: number;
   score: number;
+  level: number;
   lives: number;
   over: boolean;
   timer: number;
+  won: boolean;
 };
 
 type Asteroid = { x: number; y: number; r: number; vx: number; vy: number; hp: number };
@@ -77,9 +87,11 @@ type AsteroidsState = {
   bullets: Shot[];
   rocks: Asteroid[];
   score: number;
+  level: number;
   lives: number;
   over: boolean;
   shootCooldown: number;
+  won: boolean;
 };
 
 type RuntimeState = {
@@ -241,6 +253,39 @@ const createTetrisPiece = (): TetrisPiece => {
   };
 };
 
+const MAX_LEVEL = 5;
+
+const createBreakoutBricks = (level = 1) => {
+  const rows = Math.min(5, 2 + level);
+  const cols = 9;
+  return Array.from({ length: 6 }, (_, row) =>
+    Array.from({ length: 10 }, (_, col) => row < rows && col < cols)
+  );
+};
+
+const createInvaderWave = (level = 1): InvaderEnemy[] => {
+  const invaders: InvaderEnemy[] = [];
+  const rows = Math.min(5, 3 + Math.floor((level + 1) / 2));
+  const cols = 9;
+  const yOffset = 36 - (level - 1) * 2;
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      invaders.push({ x: 62 + col * 38, y: yOffset + row * 26, w: 24, h: 14, alive: true });
+    }
+  }
+  return invaders;
+};
+
+const createAsteroidField = (count: number, speed: number): Asteroid[] =>
+  Array.from({ length: count }, () => ({
+    x: rand(20, WIDTH - 20),
+    y: rand(20, HEIGHT - 20),
+    r: rand(14, 26),
+    vx: rand(-0.8, 0.8) * speed,
+    vy: rand(-0.8, 0.8) * speed,
+    hp: 2
+  }));
+
 const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
   const settings = DIFFICULTY_SETTINGS[difficulty];
   const snakeBody = [
@@ -249,21 +294,8 @@ const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
     { x: 12, y: 10 }
   ];
 
-  const invaders: InvaderEnemy[] = [];
-  for (let row = 0; row < 4; row += 1) {
-    for (let col = 0; col < 9; col += 1) {
-      invaders.push({ x: 62 + col * 38, y: 44 + row * 28, w: 24, h: 14, alive: true });
-    }
-  }
-
-  const asteroids: Asteroid[] = Array.from({ length: settings.asteroidCount }, () => ({
-    x: rand(20, WIDTH - 20),
-    y: rand(20, HEIGHT - 20),
-    r: rand(14, 26),
-    vx: rand(-0.8, 0.8) * settings.asteroidSpeed,
-    vy: rand(-0.8, 0.8) * settings.asteroidSpeed,
-    hp: 2
-  }));
+  const invaders = createInvaderWave(1);
+  const asteroids = createAsteroidField(settings.asteroidCount, settings.asteroidSpeed);
 
   return {
     mode: "menu",
@@ -278,7 +310,9 @@ const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
       timer: 0,
       stepMs: settings.snakeStep,
       score: 0,
-      over: false
+      level: 1,
+      over: false,
+      won: false
     },
     pong: {
       leftY: HEIGHT / 2 - 32,
@@ -286,16 +320,20 @@ const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
       ball: { x: WIDTH / 2, y: HEIGHT / 2 },
       vel: { x: 2.4 * settings.pongBall, y: 1.6 * settings.pongBall },
       scoreL: 0,
-      scoreR: 0
+      scoreR: 0,
+      level: 1,
+      rallyHits: 0
     },
     breakout: {
       paddleX: WIDTH / 2 - 36,
       ball: { x: WIDTH / 2, y: HEIGHT - 60 },
       vel: { x: 2.2 * settings.breakoutBall, y: -2.5 * settings.breakoutBall },
-      bricks: Array.from({ length: 6 }, (_, row) => Array.from({ length: 10 }, (_, col) => row < 5 && col < 9)),
+      bricks: createBreakoutBricks(1),
       score: 0,
+      level: 1,
       lives: settings.breakoutLives,
-      over: false
+      over: false,
+      won: false
     },
     tetris: {
       board: Array.from({ length: 20 }, () => Array(10).fill(0)),
@@ -303,7 +341,9 @@ const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
       timer: 0,
       speed: settings.tetrisDrop,
       score: 0,
-      over: false
+      level: 1,
+      over: false,
+      won: false
     },
     invaders: {
       playerX: WIDTH / 2 - 15,
@@ -311,9 +351,11 @@ const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
       shots: [],
       dir: 1,
       score: 0,
+      level: 1,
       lives: settings.invaderLives,
       over: false,
-      timer: 0
+      timer: 0,
+      won: false
     },
     asteroids: {
       shipPos: { x: WIDTH / 2, y: HEIGHT / 2 },
@@ -322,9 +364,11 @@ const createRuntime = (difficulty: Difficulty = "normal"): RuntimeState => {
       bullets: [],
       rocks: asteroids,
       score: 0,
+      level: 1,
       lives: settings.asteroidLives,
       over: false,
-      shootCooldown: settings.asteroidShootCd * 0.4
+      shootCooldown: settings.asteroidShootCd * 0.4,
+      won: false
     }
   };
 };
@@ -333,11 +377,33 @@ export function RetroTvGalaga() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const keysRef = useRef<Record<string, boolean>>({});
   const runtimeRef = useRef<RuntimeState>(createRuntime("normal"));
+  const gestureStartRef = useRef<Vec2 | null>(null);
   const [menuIndex, setMenuIndex] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [mode, setMode] = useState<ScreenMode>("menu");
   const [activeGame, setActiveGame] = useState<GameId | null>(null);
   const [statusText, setStatusText] = useState("Use arrows + Enter to launch. Left/Right changes difficulty.");
+  const actionAriaLabel =
+    mode === "menu" ? "Start" : activeGame === "tetris" ? "Rotate" : activeGame === "invaders" || activeGame === "asteroids" ? "Fire" : "Action";
+  const gameplayHint =
+    mode === "menu"
+      ? "Menu: ↑/↓ select game, ←/→ difficulty, Start/Enter launch."
+      : activeGame === "tetris"
+        ? "Tetris: ←/→ move, ↓ soft drop, Rotate button or tap/swipe up to rotate."
+        : activeGame === "pong"
+          ? "Pong: ↑/↓ move paddle. Rally speed increases per hit."
+          : activeGame === "breakout"
+            ? "Breakout: ←/→ move paddle, keep the ball alive through all levels."
+            : activeGame === "snake"
+              ? "Snake: use D-pad to steer and avoid walls/self."
+              : activeGame === "invaders"
+                ? "Invaders: ←/→ move, Action to fire, clear all waves."
+                : "Asteroids: ←/→ rotate, ↑ thrust, Action to fire.";
+
+  const tapKey = (key: string) => {
+    handleInputKeyDown(key);
+    window.setTimeout(() => handleInputKeyUp(key), 0);
+  };
 
   const drawMenu = (ctx: CanvasRenderingContext2D, currentIndex: number, currentDifficulty: Difficulty) => {
     ctx.fillStyle = "#020706";
@@ -517,18 +583,47 @@ export function RetroTvGalaga() {
     };
 
     const pointerDown = (event: PointerEvent) => {
-      if (runtimeRef.current.mode !== "menu") return;
+      if (runtimeRef.current.mode !== "menu") {
+        if (runtimeRef.current.activeGame === "tetris") {
+          const pos = toCanvasCoords(event.clientX, event.clientY);
+          gestureStartRef.current = { x: pos.x, y: pos.y };
+        }
+        return;
+      }
       event.preventDefault();
       handleMenuActivate(event.clientX, event.clientY);
+    };
+
+    const pointerUp = (event: PointerEvent) => {
+      if (runtimeRef.current.mode !== "playing" || runtimeRef.current.activeGame !== "tetris") return;
+      const start = gestureStartRef.current;
+      if (!start) return;
+      const end = toCanvasCoords(event.clientX, event.clientY);
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const threshold = 18;
+
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
+        tapKey(dx > 0 ? "ArrowRight" : "ArrowLeft");
+      } else if (dy > threshold) {
+        tapKey("ArrowDown");
+      } else if (dy < -threshold) {
+        tapKey("ArrowUp");
+      } else {
+        tapKey("ArrowUp");
+      }
+      gestureStartRef.current = null;
     };
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointermove", pointerMove);
     canvas.addEventListener("pointerdown", pointerDown);
+    canvas.addEventListener("pointerup", pointerUp);
 
     return () => {
       canvas.removeEventListener("pointermove", pointerMove);
       canvas.removeEventListener("pointerdown", pointerDown);
+      canvas.removeEventListener("pointerup", pointerUp);
     };
   }, []);
 
@@ -557,7 +652,8 @@ export function RetroTvGalaga() {
       if ((keysRef.current.arrowright || keysRef.current.d) && st.dir.x !== -1) st.nextDir = { x: 1, y: 0 };
 
       st.timer += delta;
-      if (st.timer < settings.snakeStep) return;
+      const stepMs = settings.snakeStep * (1 - (st.level - 1) * 0.11);
+      if (st.timer < stepMs) return;
       st.timer = 0;
       st.dir = st.nextDir;
 
@@ -571,11 +667,16 @@ export function RetroTvGalaga() {
       st.body.unshift(head);
       if (head.x === st.food.x && head.y === st.food.y) {
         st.score += 10;
+        st.level = clamp(1 + Math.floor(st.score / 50), 1, MAX_LEVEL);
         st.food = randomFood(st.body);
       } else {
         st.body.pop();
       }
-      setStatusText(`Snake Score ${st.score} - ESC for menu`);
+      if (st.level >= MAX_LEVEL && st.score >= 250) {
+        st.over = true;
+        st.won = true;
+      }
+      setStatusText(`Snake L${st.level} Score ${st.score} - ESC for menu`);
     };
 
     const drawSnake = () => {
@@ -613,24 +714,31 @@ export function RetroTvGalaga() {
         ctx.fillStyle = "#bde8ff";
         ctx.font = "700 28px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2);
+        ctx.fillText(st.won ? "SNAKE MASTERED" : "GAME OVER", WIDTH / 2, HEIGHT / 2);
       }
     };
 
     const updatePong = (delta: number) => {
       const st = runtimeRef.current.pong;
       const settings = DIFFICULTY_SETTINGS[runtimeRef.current.difficulty];
+      const levelMult = 1 + (st.level - 1) * 0.11;
       const speed = delta * 0.28;
       if (keysRef.current.w || keysRef.current.arrowup) st.leftY -= speed;
       if (keysRef.current.s || keysRef.current.arrowdown) st.leftY += speed;
       st.leftY = clamp(st.leftY, 10, HEIGHT - 74);
 
-      const aiTarget = st.ball.y - 32;
-      st.rightY += clamp(aiTarget - st.rightY, -speed * 0.9 * settings.pongAi, speed * 0.9 * settings.pongAi);
+      const aiError = 16 + (5 - st.level) * 3;
+      const aiTarget = st.ball.y - 32 + Math.sin(st.ball.x * 0.03) * aiError;
+      const aiDelta = aiTarget - st.rightY;
+      const aiDeadZone = 8;
+      if (Math.abs(aiDelta) > aiDeadZone) {
+        st.rightY += clamp(aiDelta, -speed * 0.58 * settings.pongAi * levelMult, speed * 0.58 * settings.pongAi * levelMult);
+      }
       st.rightY = clamp(st.rightY, 10, HEIGHT - 74);
 
-      st.ball.x += st.vel.x * settings.pongBall;
-      st.ball.y += st.vel.y * settings.pongBall;
+      const rallyMult = 1 + Math.min(0.9, st.rallyHits * 0.045);
+      st.ball.x += st.vel.x * settings.pongBall * levelMult * rallyMult;
+      st.ball.y += st.vel.y * settings.pongBall * levelMult * rallyMult;
       if (st.ball.y < 8 || st.ball.y > HEIGHT - 8) st.vel.y *= -1;
 
       const leftPaddle = { x: 18, y: st.leftY, w: 10, h: 64 };
@@ -640,23 +748,28 @@ export function RetroTvGalaga() {
       if (collideRect(ballRect, leftPaddle) && st.vel.x < 0) {
         st.vel.x *= -1;
         st.vel.y += (st.ball.y - (st.leftY + 32)) * 0.02;
+        st.rallyHits += 1;
       }
       if (collideRect(ballRect, rightPaddle) && st.vel.x > 0) {
         st.vel.x *= -1;
         st.vel.y += (st.ball.y - (st.rightY + 32)) * 0.02;
+        st.rallyHits += 1;
       }
 
       if (st.ball.x < -10) {
         st.scoreR += 1;
         st.ball = { x: WIDTH / 2, y: HEIGHT / 2 };
         st.vel = { x: 2.4 * settings.pongBall, y: rand(-2, 2) * settings.pongBall };
+        st.rallyHits = 0;
       }
       if (st.ball.x > WIDTH + 10) {
         st.scoreL += 1;
         st.ball = { x: WIDTH / 2, y: HEIGHT / 2 };
         st.vel = { x: -2.4 * settings.pongBall, y: rand(-2, 2) * settings.pongBall };
+        st.rallyHits = 0;
       }
-      setStatusText(`Pong ${st.scoreL} : ${st.scoreR} - ESC for menu`);
+      st.level = clamp(1 + Math.floor(Math.max(st.scoreL, st.scoreR) / 2), 1, MAX_LEVEL);
+      setStatusText(`Pong L${st.level} ${st.scoreL} : ${st.scoreR} - ESC for menu`);
     };
 
     const drawPong = () => {
@@ -688,13 +801,14 @@ export function RetroTvGalaga() {
       const st = runtimeRef.current.breakout;
       if (st.over) return;
       const settings = DIFFICULTY_SETTINGS[runtimeRef.current.difficulty];
+      const levelMult = 1 + (st.level - 1) * 0.1;
 
       if (keysRef.current.arrowleft || keysRef.current.a) st.paddleX -= 4.2 * settings.breakoutPaddle;
       if (keysRef.current.arrowright || keysRef.current.d) st.paddleX += 4.2 * settings.breakoutPaddle;
       st.paddleX = clamp(st.paddleX, 10, WIDTH - 82);
 
-      st.ball.x += st.vel.x * settings.breakoutBall;
-      st.ball.y += st.vel.y * settings.breakoutBall;
+      st.ball.x += st.vel.x * settings.breakoutBall * levelMult;
+      st.ball.y += st.vel.y * settings.breakoutBall * levelMult;
 
       if (st.ball.x < 8 || st.ball.x > WIDTH - 8) st.vel.x *= -1;
       if (st.ball.y < 8) st.vel.y *= -1;
@@ -733,10 +847,19 @@ export function RetroTvGalaga() {
 
       const remaining = st.bricks.flat().filter(Boolean).length;
       if (remaining === 0) {
-        st.over = true;
-        st.score += 150;
+        if (st.level < MAX_LEVEL) {
+          st.level += 1;
+          st.score += 150;
+          st.bricks = createBreakoutBricks(st.level);
+          st.ball = { x: WIDTH / 2, y: HEIGHT - 60 };
+          st.vel = { x: rand(-2.2, 2.2) * settings.breakoutBall, y: -2.5 * settings.breakoutBall };
+        } else {
+          st.over = true;
+          st.won = true;
+          st.score += 300;
+        }
       }
-      setStatusText(`Breakout Score ${st.score} | Lives ${st.lives} - ESC for menu`);
+      setStatusText(`Breakout L${st.level} Score ${st.score} | Lives ${st.lives} - ESC for menu`);
     };
 
     const drawBreakout = () => {
@@ -766,7 +889,7 @@ export function RetroTvGalaga() {
         ctx.fillStyle = "#d7e8ff";
         ctx.font = "700 26px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("ROUND COMPLETE", WIDTH / 2, HEIGHT / 2);
+        ctx.fillText(st.won ? "BREAKOUT MASTERED" : "GAME OVER", WIDTH / 2, HEIGHT / 2);
       }
     };
 
@@ -803,6 +926,7 @@ export function RetroTvGalaga() {
         }
       }
       if (lines > 0) st.score += lines * 100;
+      st.level = clamp(1 + Math.floor(st.score / 300), 1, MAX_LEVEL);
       st.active = createTetrisPiece();
       if (!canPlace(st.board, st.active)) {
         st.over = true;
@@ -813,6 +937,7 @@ export function RetroTvGalaga() {
       const st = runtimeRef.current.tetris;
       if (st.over) return;
       const settings = DIFFICULTY_SETTINGS[runtimeRef.current.difficulty];
+      st.speed = Math.max(110, settings.tetrisDrop - (st.level - 1) * 55);
 
       if (keysRef.current.arrowleft && canPlace(st.board, st.active, st.active.x - 1, st.active.y)) {
         st.active.x -= 1;
@@ -830,7 +955,7 @@ export function RetroTvGalaga() {
 
       const dropBoost = keysRef.current.arrowdown ? 3.2 : 1;
       st.timer += delta * dropBoost;
-      if (st.timer >= settings.tetrisDrop) {
+      if (st.timer >= st.speed) {
         st.timer = 0;
         if (canPlace(st.board, st.active, st.active.x, st.active.y + 1)) {
           st.active.y += 1;
@@ -839,7 +964,11 @@ export function RetroTvGalaga() {
         }
       }
 
-      setStatusText(`Tetris Score ${st.score} - ESC for menu`);
+      if (st.level >= MAX_LEVEL && st.score >= 1500) {
+        st.over = true;
+        st.won = true;
+      }
+      setStatusText(`Tetris L${st.level} Score ${st.score} - ESC for menu`);
     };
 
     const drawTetris = () => {
@@ -877,7 +1006,7 @@ export function RetroTvGalaga() {
         ctx.fillStyle = "#d7e8ff";
         ctx.font = "700 26px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("STACK LOCKED", WIDTH / 2, HEIGHT / 2);
+        ctx.fillText(st.won ? "TETRIS MASTERED" : "STACK LOCKED", WIDTH / 2, HEIGHT / 2);
       }
     };
 
@@ -885,6 +1014,7 @@ export function RetroTvGalaga() {
       const st = runtimeRef.current.invaders;
       if (st.over) return;
       const settings = DIFFICULTY_SETTINGS[runtimeRef.current.difficulty];
+      const levelMult = 1 + (st.level - 1) * 0.12;
 
       if (keysRef.current.arrowleft || keysRef.current.a) st.playerX -= 3.4;
       if (keysRef.current.arrowright || keysRef.current.d) st.playerX += 3.4;
@@ -903,11 +1033,11 @@ export function RetroTvGalaga() {
       st.enemies.forEach((e) => {
         if (!e.alive) return;
         alive += 1;
-        e.x += st.dir * 0.7 * settings.invaderMove;
+          e.x += st.dir * 0.7 * settings.invaderMove * levelMult;
         minX = Math.min(minX, e.x);
         maxX = Math.max(maxX, e.x + e.w);
-        if (Math.random() < 0.0008 * settings.invaderShotRate) {
-          st.shots.push({ x: e.x + e.w / 2, y: e.y + e.h, vx: 0, vy: 2.2 * settings.invaderMove, friendly: false });
+        if (Math.random() < 0.0008 * settings.invaderShotRate * levelMult) {
+          st.shots.push({ x: e.x + e.w / 2, y: e.y + e.h, vx: 0, vy: 2.2 * settings.invaderMove * levelMult, friendly: false });
         }
       });
 
@@ -946,10 +1076,19 @@ export function RetroTvGalaga() {
 
       if (st.enemies.some((e) => e.alive && e.y + e.h >= HEIGHT - 24)) st.over = true;
       if (alive === 0) {
-        st.over = true;
-        st.score += 500;
+        if (st.level < MAX_LEVEL) {
+          st.level += 1;
+          st.enemies = createInvaderWave(st.level);
+          st.shots = [];
+          st.dir = 1;
+          st.score += 300;
+        } else {
+          st.over = true;
+          st.won = true;
+          st.score += 600;
+        }
       }
-      setStatusText(`Invaders Score ${st.score} | Lives ${st.lives} - ESC for menu`);
+      setStatusText(`Invaders L${st.level} Score ${st.score} | Lives ${st.lives} - ESC for menu`);
     };
 
     const drawInvaders = () => {
@@ -981,7 +1120,7 @@ export function RetroTvGalaga() {
         ctx.fillStyle = "#d7e8ff";
         ctx.font = "700 24px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("SECTOR CLEAR", WIDTH / 2, HEIGHT / 2);
+        ctx.fillText(st.won ? "INVADERS MASTERED" : "BASE OVERRUN", WIDTH / 2, HEIGHT / 2);
       }
     };
 
@@ -989,13 +1128,14 @@ export function RetroTvGalaga() {
       const st = runtimeRef.current.asteroids;
       if (st.over) return;
       const settings = DIFFICULTY_SETTINGS[runtimeRef.current.difficulty];
+      const levelMult = 1 + (st.level - 1) * 0.1;
 
       const rotateSpeed = 0.0042 * delta;
       if (keysRef.current.arrowleft || keysRef.current.a) st.angle -= rotateSpeed;
       if (keysRef.current.arrowright || keysRef.current.d) st.angle += rotateSpeed;
       if (keysRef.current.arrowup || keysRef.current.w) {
-        st.shipVel.x += Math.cos(st.angle) * 0.05 * settings.asteroidThrust;
-        st.shipVel.y += Math.sin(st.angle) * 0.05 * settings.asteroidThrust;
+        st.shipVel.x += Math.cos(st.angle) * 0.05 * settings.asteroidThrust * levelMult;
+        st.shipVel.y += Math.sin(st.angle) * 0.05 * settings.asteroidThrust * levelMult;
       }
 
       st.shipPos.x = (st.shipPos.x + st.shipVel.x + WIDTH) % WIDTH;
@@ -1008,8 +1148,8 @@ export function RetroTvGalaga() {
         st.bullets.push({
           x: st.shipPos.x + Math.cos(st.angle) * 14,
           y: st.shipPos.y + Math.sin(st.angle) * 14,
-          vx: Math.cos(st.angle) * 4.2,
-          vy: Math.sin(st.angle) * 4.2,
+          vx: Math.cos(st.angle) * 4.2 * levelMult,
+          vy: Math.sin(st.angle) * 4.2 * levelMult,
           friendly: true
         });
         st.shootCooldown = settings.asteroidShootCd;
@@ -1061,10 +1201,18 @@ export function RetroTvGalaga() {
       }
 
       if (st.rocks.length === 0) {
-        st.over = true;
-        st.score += 400;
+        if (st.level < MAX_LEVEL) {
+          st.level += 1;
+          st.rocks = createAsteroidField(settings.asteroidCount + st.level * 2, settings.asteroidSpeed * (1 + st.level * 0.09));
+          st.bullets = [];
+          st.score += 280;
+        } else {
+          st.over = true;
+          st.won = true;
+          st.score += 500;
+        }
       }
-      setStatusText(`Asteroids Score ${st.score} | Lives ${st.lives} - ESC for menu`);
+      setStatusText(`Asteroids L${st.level} Score ${st.score} | Lives ${st.lives} - ESC for menu`);
     };
 
     const drawAsteroids = () => {
@@ -1121,7 +1269,7 @@ export function RetroTvGalaga() {
         ctx.fillStyle = "#d7e8ff";
         ctx.font = "700 24px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("ASTEROID FIELD CLEARED", WIDTH / 2, HEIGHT / 2);
+        ctx.fillText(st.won ? "ASTEROIDS MASTERED" : "SHIP DESTROYED", WIDTH / 2, HEIGHT / 2);
       }
     };
 
@@ -1152,6 +1300,35 @@ export function RetroTvGalaga() {
         drawAsteroids();
       }
 
+      if (runtime.mode === "playing" && runtime.activeGame) {
+        let hud = "";
+        if (runtime.activeGame === "snake") {
+          hud = `L${runtime.snake.level}  SCORE ${runtime.snake.score}`;
+        } else if (runtime.activeGame === "pong") {
+          hud = `L${runtime.pong.level}  YOU ${runtime.pong.scoreL}  CPU ${runtime.pong.scoreR}`;
+        } else if (runtime.activeGame === "breakout") {
+          hud = `L${runtime.breakout.level}  SCORE ${runtime.breakout.score}  LIVES ${runtime.breakout.lives}`;
+        } else if (runtime.activeGame === "tetris") {
+          hud = `L${runtime.tetris.level}  SCORE ${runtime.tetris.score}`;
+        } else if (runtime.activeGame === "invaders") {
+          hud = `L${runtime.invaders.level}  SCORE ${runtime.invaders.score}  LIVES ${runtime.invaders.lives}`;
+        } else if (runtime.activeGame === "asteroids") {
+          hud = `L${runtime.asteroids.level}  SCORE ${runtime.asteroids.score}  LIVES ${runtime.asteroids.lives}`;
+        }
+
+        ctx.fillStyle = "rgba(3, 8, 16, 0.78)";
+        ctx.fillRect(0, HEIGHT - 20, WIDTH, 20);
+        ctx.strokeStyle = "rgba(120, 170, 255, 0.25)";
+        ctx.beginPath();
+        ctx.moveTo(0, HEIGHT - 20);
+        ctx.lineTo(WIDTH, HEIGHT - 20);
+        ctx.stroke();
+        ctx.fillStyle = "#a8d4ff";
+        ctx.font = "600 11px monospace";
+        ctx.textAlign = "left";
+        ctx.fillText(hud, 10, HEIGHT - 7);
+      }
+
       raf = window.requestAnimationFrame(frame);
     };
 
@@ -1176,13 +1353,134 @@ export function RetroTvGalaga() {
 
           <div className="retro-tv-controls">
             <div className="retro-tv-badge">RETRO ARCADE</div>
-            <div className="retro-tv-knob" />
-            <div className="retro-tv-knob retro-tv-knob-small" />
+            <div className="mt-1 rounded-md border border-[#6c6b6a] bg-[#c9c8c4] p-2">
+              <div className="grid grid-cols-[82px_92px] justify-center gap-3">
+                <div className="relative h-[76px] w-[76px]">
+                  <button
+                    type="button"
+                    className="absolute left-1/2 top-0 h-7 w-7 -translate-x-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      handleInputKeyDown("ArrowUp");
+                    }}
+                    onPointerUp={() => handleInputKeyUp("ArrowUp")}
+                    onPointerCancel={() => handleInputKeyUp("ArrowUp")}
+                    onPointerLeave={() => handleInputKeyUp("ArrowUp")}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute left-0 top-1/2 h-7 w-7 -translate-y-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      handleInputKeyDown("ArrowLeft");
+                    }}
+                    onPointerUp={() => handleInputKeyUp("ArrowLeft")}
+                    onPointerCancel={() => handleInputKeyUp("ArrowLeft")}
+                    onPointerLeave={() => handleInputKeyUp("ArrowLeft")}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute bottom-0 left-1/2 h-7 w-7 -translate-x-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      handleInputKeyDown("ArrowDown");
+                    }}
+                    onPointerUp={() => handleInputKeyUp("ArrowDown")}
+                    onPointerCancel={() => handleInputKeyUp("ArrowDown")}
+                    onPointerLeave={() => handleInputKeyUp("ArrowDown")}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute right-0 top-1/2 h-7 w-7 -translate-y-1/2 rounded-[0.35rem] border border-[#1c1c1c] bg-[#303030] text-[11px] font-bold text-[#d5d5d5]"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      handleInputKeyDown("ArrowRight");
+                    }}
+                    onPointerUp={() => handleInputKeyUp("ArrowRight")}
+                    onPointerCancel={() => handleInputKeyUp("ArrowRight")}
+                    onPointerLeave={() => handleInputKeyUp("ArrowRight")}
+                  >
+                    →
+                  </button>
+                </div>
+
+                <div className="grid content-start gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      className="h-9 w-9 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#b45ea1] to-[#8a3e78] text-[10px] font-bold text-[#f3d9ed] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                      onClick={() => {
+                        handleInputKeyDown("Escape");
+                        handleInputKeyUp("Escape");
+                      }}
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={actionAriaLabel}
+                      className="h-9 w-9 rounded-full border border-[#6a2f5b] bg-gradient-to-b from-[#c068ad] to-[#91417e] text-[10px] font-bold text-[#fff2fc] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        if (runtimeRef.current.mode === "menu") {
+                          tapKey("Enter");
+                          return;
+                        }
+                        if (runtimeRef.current.activeGame === "tetris") {
+                          tapKey("ArrowUp");
+                        } else {
+                          handleInputKeyDown(" ");
+                        }
+                      }}
+                      onPointerUp={() => {
+                        if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
+                      }}
+                      onPointerCancel={() => {
+                        if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
+                      }}
+                      onPointerLeave={() => {
+                        if (runtimeRef.current.activeGame !== "tetris") handleInputKeyUp(" ");
+                      }}
+                    >
+                      A
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 flex justify-center gap-1.5">
+                <button
+                  type="button"
+                  className="rounded-full border border-[#5a5c65] bg-[#878b96] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
+                  onClick={() => {
+                    handleInputKeyDown("Escape");
+                    handleInputKeyUp("Escape");
+                  }}
+                >
+                  Select
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-[#5a5c65] bg-[#878b96] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-[#1b1f2a]"
+                  onClick={() => {
+                    tapKey("Enter");
+                  }}
+                >
+                  Start
+                </button>
+              </div>
+            </div>
             <div className="retro-tv-grille">
               {Array.from({ length: 10 }).map((_, idx) => (
                 <span key={idx} />
               ))}
             </div>
+            <p className="mt-2 text-[9px] leading-tight text-[#6e7686]">{gameplayHint}</p>
           </div>
         </div>
       </div>
@@ -1204,99 +1502,6 @@ export function RetroTvGalaga() {
           Selected: {MENU_ITEMS[menuIndex].label} | Difficulty: {difficulty.toUpperCase()}
         </p>
       )}
-
-      <div className="mt-4 rounded-xl border border-slateLine/70 bg-slatePanel/40 p-3 sm:hidden">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#b5c8eb]">Touch Controls</p>
-        <div className="flex items-end justify-between gap-3">
-          <div className="grid grid-cols-3 gap-2">
-            <span />
-            <button
-              type="button"
-              className="h-10 w-10 rounded-lg border border-accentBlue/65 bg-slatePanel/60 text-sm font-semibold text-mist"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                handleInputKeyDown("ArrowUp");
-              }}
-              onPointerUp={() => handleInputKeyUp("ArrowUp")}
-              onPointerCancel={() => handleInputKeyUp("ArrowUp")}
-              onPointerLeave={() => handleInputKeyUp("ArrowUp")}
-            >
-              ↑
-            </button>
-            <span />
-            <button
-              type="button"
-              className="h-10 w-10 rounded-lg border border-accentBlue/65 bg-slatePanel/60 text-sm font-semibold text-mist"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                handleInputKeyDown("ArrowLeft");
-              }}
-              onPointerUp={() => handleInputKeyUp("ArrowLeft")}
-              onPointerCancel={() => handleInputKeyUp("ArrowLeft")}
-              onPointerLeave={() => handleInputKeyUp("ArrowLeft")}
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              className="h-10 w-10 rounded-lg border border-accentBlue/65 bg-slatePanel/60 text-sm font-semibold text-mist"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                handleInputKeyDown("ArrowDown");
-              }}
-              onPointerUp={() => handleInputKeyUp("ArrowDown")}
-              onPointerCancel={() => handleInputKeyUp("ArrowDown")}
-              onPointerLeave={() => handleInputKeyUp("ArrowDown")}
-            >
-              ↓
-            </button>
-            <button
-              type="button"
-              className="h-10 w-10 rounded-lg border border-accentBlue/65 bg-slatePanel/60 text-sm font-semibold text-mist"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                handleInputKeyDown("ArrowRight");
-              }}
-              onPointerUp={() => handleInputKeyUp("ArrowRight")}
-              onPointerCancel={() => handleInputKeyUp("ArrowRight")}
-              onPointerLeave={() => handleInputKeyUp("ArrowRight")}
-            >
-              →
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              className="min-w-[78px] rounded-lg border border-accentBlue/75 bg-accentBlue/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-accentBlueSoft"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                if (runtimeRef.current.mode === "menu") {
-                  handleInputKeyDown("Enter");
-                  handleInputKeyUp("Enter");
-                  return;
-                }
-                handleInputKeyDown(" ");
-              }}
-              onPointerUp={() => handleInputKeyUp(" ")}
-              onPointerCancel={() => handleInputKeyUp(" ")}
-              onPointerLeave={() => handleInputKeyUp(" ")}
-            >
-              {mode === "menu" ? "Start" : "Action"}
-            </button>
-            <button
-              type="button"
-              className="min-w-[78px] rounded-lg border border-slateLine/80 bg-slatePanel/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-mistSoft"
-              onClick={() => {
-                handleInputKeyDown("Escape");
-                handleInputKeyUp("Escape");
-              }}
-            >
-              Menu
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -70,7 +70,7 @@ a:visited {
 
 .retro-tv-chassis {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 148px;
+  grid-template-columns: minmax(0, 1fr) 248px;
   gap: 0.75rem;
   padding: 0.65rem;
   border-radius: 0.35rem;
@@ -179,21 +179,10 @@ a:visited {
   .retro-tv-controls {
     margin-top: 0.45rem;
     width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.55rem;
-  }
-
-  .retro-tv-badge,
-  .retro-tv-grille {
-    grid-column: span 3;
-  }
-
-  .retro-tv-knob,
-  .retro-tv-knob-small {
-    justify-self: center;
-    width: 3.1rem;
   }
 }
 
@@ -265,6 +254,7 @@ a:visited {
   background: linear-gradient(90deg, #8eb2f1, #5d86d1);
   animation: startup-loader-sweep 900ms ease-in-out infinite alternate;
 }
+
 
 .startup-loader-bars {
   margin-top: 0.9rem;

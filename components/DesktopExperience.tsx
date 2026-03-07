@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { WorkShowcase } from "@/components/WorkShowcase";
 import { BrandWork } from "@/data/work";
@@ -21,14 +20,16 @@ type DesktopApp = {
 };
 
 const apps: DesktopApp[] = [
-  { id: "home", label: "Home", iconSrc: "https://img.icons8.com/fluency/96/safari.png", title: "Portfolio Browser", url: "http://localhost:3000/" },
-  { id: "about", label: "About", iconSrc: "https://img.icons8.com/fluency/96/user-male-circle.png", title: "About - Portfolio", url: "/#about" },
-  { id: "services", label: "Services", iconSrc: "https://img.icons8.com/fluency/96/services.png", title: "Services - Portfolio", url: "/#services" },
-  { id: "projects", label: "Work", iconSrc: "https://img.icons8.com/fluency/96/folder-invoices.png", title: "Work - Portfolio", url: "/#work" },
-  { id: "contact", label: "Contact", iconSrc: "https://img.icons8.com/fluency/96/apple-mail.png", title: "Contact - Portfolio", url: "/#contact" },
-  { id: "camera", label: "Photo", iconSrc: "https://img.icons8.com/fluency/96/camera--v1.png", title: "Photography - Portfolio", url: "/#work" }
+  { id: "home", label: "Home", iconSrc: "/desktop-ui-icons/safari.png", title: "Portfolio Browser", url: "https://freelancecreative.co.uk/" },
+  { id: "about", label: "About", iconSrc: "/desktop-ui-icons/notes.png", title: "About - Portfolio", url: "https://freelancecreative.co.uk/#about" },
+  { id: "services", label: "Services", iconSrc: "/desktop-ui-icons/terminal.png", title: "Services - Portfolio", url: "https://freelancecreative.co.uk/#services" },
+  { id: "projects", label: "Work", iconSrc: "/desktop-ui-icons/vscode.png", title: "Work - Portfolio", url: "https://freelancecreative.co.uk/#work" },
+  { id: "contact", label: "Contact", iconSrc: "/desktop-ui-icons/mail.png", title: "Contact - Portfolio", url: "https://freelancecreative.co.uk/#contact" },
+  { id: "camera", label: "Photo", iconSrc: "/desktop-ui-icons/facetime.png", title: "Photography - Portfolio", url: "https://freelancecreative.co.uk/#work" }
 ];
-const HOME_URL = "http://localhost:3000/";
+const HOME_URL = "/";
+const dockOrder: AppId[] = ["home", "about", "services", "projects", "contact", "camera"];
+const LIVE_BG_VIDEO = "/9667568-hd_1920_1080_25fps.mp4";
 
 const getInitialIconPositions = (viewportWidth: number): Record<AppId, { x: number; y: number }> => {
   const center = viewportWidth / 2;
@@ -78,12 +79,22 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
     gallery: { x: 20, y: 20 }
   });
   const [showWorkPopup, setShowWorkPopup] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [showControlCenter, setShowControlCenter] = useState(false);
+  const [darkDesktop, setDarkDesktop] = useState(false);
+  const [displayLevel, setDisplayLevel] = useState(73);
+  const [volumeLevel, setVolumeLevel] = useState(75);
+  const [isExitingToHome, setIsExitingToHome] = useState(false);
+  const [dockMouseX, setDockMouseX] = useState<number | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactSubject, setContactSubject] = useState("");
   const [contactMessage, setContactMessage] = useState("");
   const suppressIconClickRef = useRef<AppId | null>(null);
+  const dockRef = useRef<HTMLDivElement | null>(null);
+  const liveVideoRef = useRef<HTMLVideoElement | null>(null);
   const activeGalleryImage = galleryImages.length > 0 ? galleryImages[galleryIndex % galleryImages.length] : null;
 
   useEffect(() => {
@@ -106,10 +117,14 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
 
     updateClock();
     setIsNarrow(window.innerWidth < 1200);
+    setIsTouchDevice(window.matchMedia("(hover: none), (pointer: coarse)").matches);
     setIconPos(getInitialIconPositions(window.innerWidth));
     setWidgetPos(getInitialWidgetPositions(window.innerWidth));
     const timer = window.setInterval(updateClock, 1000);
-    const onResize = () => setIsNarrow(window.innerWidth < 1200);
+    const onResize = () => {
+      setIsNarrow(window.innerWidth < 1200);
+      setIsTouchDevice(window.matchMedia("(hover: none), (pointer: coarse)").matches);
+    };
     window.addEventListener("resize", onResize);
     return () => {
       window.clearInterval(timer);
@@ -126,7 +141,22 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
     return () => window.clearInterval(timer);
   }, [galleryImages]);
 
+  useEffect(() => {
+    const preloadLink = document.createElement("link");
+    preloadLink.rel = "preload";
+    preloadLink.as = "video";
+    preloadLink.href = LIVE_BG_VIDEO;
+    document.head.appendChild(preloadLink);
+    return () => {
+      document.head.removeChild(preloadLink);
+    };
+  }, []);
+
   const appMap = useMemo(() => new Map(apps.map((app) => [app.id, app])), []);
+  const dockApps = useMemo(
+    () => dockOrder.map((id) => appMap.get(id)).filter((item): item is DesktopApp => Boolean(item)),
+    [appMap]
+  );
 
   const launchApp = (id: AppId) => {
     if (id === "home") {
@@ -147,6 +177,14 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
     setIsExpanded(false);
   };
 
+  const animateExitToHome = () => {
+    if (isExitingToHome) return;
+    setIsExitingToHome(true);
+    window.setTimeout(() => {
+      window.location.href = HOME_URL;
+    }, 420);
+  };
+
   const submitContactEmail = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const lines = [
@@ -163,6 +201,18 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
 
   const toggleMenu = (menuName: string) => {
     setMenuOpen((current) => (current === menuName ? null : menuName));
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // no-op: fullscreen can be blocked in some environments
+    }
   };
 
   const startWindowDrag = (event: React.MouseEvent<HTMLElement>) => {
@@ -243,72 +293,120 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
     window.addEventListener("mouseup", onUp);
   };
 
+  const getDockScale = (index: number) => {
+    if (dockMouseX === null || isTouchDevice || !dockRef.current) return 1;
+    const rect = dockRef.current.getBoundingClientRect();
+    const iconCount = dockApps.length;
+    if (!iconCount) return 1;
+    const iconSpacing = rect.width / iconCount;
+    const iconCenter = iconSpacing * (index + 0.5);
+    const distance = Math.abs(dockMouseX - iconCenter);
+    const maxDistance = iconSpacing * 1.8;
+    if (distance >= maxDistance) return 1;
+    return 1 + 0.5 * Math.pow(1 - distance / maxDistance, 2);
+  };
+
   return (
-    <div className="relative h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_18%,#74b8ff_0%,#4f8fe0_28%,#2b5baf_55%,#17346d_80%,#0a1c3f_100%)]">
+    <div
+      className={`relative h-screen overflow-hidden bg-black transition-all duration-[420ms] ease-out ${
+        isExitingToHome ? "scale-[0.985] opacity-0 blur-[1px]" : "scale-100 opacity-100 blur-0"
+      }`}
+    >
       <video
-        className="absolute inset-0 h-full w-full object-cover"
+        ref={liveVideoRef}
+        className="absolute inset-0 h-full w-full object-cover opacity-45"
         autoPlay
         muted
         loop
         playsInline
-        poster="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2200&q=80"
+        preload="auto"
+        onCanPlay={() => {
+          if (liveVideoRef.current) liveVideoRef.current.playbackRate = 0.5;
+        }}
+        onLoadedData={() => {
+          if (liveVideoRef.current) liveVideoRef.current.playbackRate = 0.5;
+          setVideoReady(true);
+        }}
+        onLoadedMetadata={() => {
+          if (liveVideoRef.current) liveVideoRef.current.playbackRate = 0.5;
+        }}
+        onError={() => setVideoReady(false)}
       >
-        <source src="/desktop-loop.mp4" type="video/mp4" />
-        <source src="https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4" type="video/mp4" />
+        <source src={LIVE_BG_VIDEO} type="video/mp4" />
       </video>
+      <div className={`pointer-events-none absolute inset-0 ${darkDesktop ? "bg-black/42" : "bg-white/10"}`} />
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.14),transparent_34%,rgba(0,0,0,0.2))]" />
-      <div className="pointer-events-none absolute inset-0 bg-slate-900/25" />
-      <div className="pointer-events-none absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-cyan-100/20 blur-3xl" />
-      <div className="pointer-events-none absolute right-16 top-24 h-64 w-64 rounded-full bg-indigo-200/20 blur-3xl" />
-
-      <header className="relative z-40 flex h-10 items-center justify-between border-b border-white/30 bg-white/28 px-3 text-[12px] text-white backdrop-blur-xl">
-        <div className="flex items-center gap-4 font-semibold">
-          <span className="text-[14px]"></span>
-          <button type="button" onClick={() => toggleMenu("Finder")} className="rounded px-1.5 py-0.5 hover:bg-white/35">
-            Finder
-          </button>
-          <button type="button" onClick={() => toggleMenu("File")} className="hidden rounded px-1.5 py-0.5 hover:bg-white/35 sm:inline">
-            File
-          </button>
-          <button type="button" onClick={() => toggleMenu("Edit")} className="hidden rounded px-1.5 py-0.5 hover:bg-white/35 sm:inline">
-            Edit
-          </button>
-          <button type="button" onClick={() => toggleMenu("View")} className="hidden rounded px-1.5 py-0.5 hover:bg-white/35 sm:inline">
-            View
-          </button>
-          <button type="button" onClick={() => toggleMenu("Go")} className="hidden rounded px-1.5 py-0.5 hover:bg-white/35 sm:inline">
-            Go
-          </button>
-          <button type="button" onClick={() => toggleMenu("Window")} className="hidden rounded px-1.5 py-0.5 hover:bg-white/35 sm:inline">
-            Window
-          </button>
-          <button type="button" onClick={() => toggleMenu("Help")} className="hidden rounded px-1.5 py-0.5 hover:bg-white/35 sm:inline">
-            Help
-          </button>
+      <header className={`relative z-40 text-[12px] backdrop-blur-xl ${darkDesktop ? "bg-[#2f2f32]/90 text-white" : "bg-[#d7dde8]/90 text-[#1f2a3b]"}`}>
+        <div className="flex h-11 items-center justify-between px-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 pr-1">
+              <button type="button" aria-label="Close desktop" onClick={animateExitToHome} className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <button type="button" aria-label="Minimize desktop" onClick={animateExitToHome} className="h-3 w-3 rounded-full bg-[#febc2e]" />
+              <button type="button" aria-label="Desktop fullscreen" onClick={toggleFullscreen} className="h-3 w-3 rounded-full bg-[#28c840]" />
+            </div>
+            <button
+              type="button"
+              onClick={animateExitToHome}
+              aria-label="Back to home"
+              className={`text-sm ${darkDesktop ? "text-white/70 hover:text-white" : "text-[#1f2a3b]/70 hover:text-[#1f2a3b]"}`}
+            >
+              ◀
+            </button>
+            <span className={`text-sm ${darkDesktop ? "text-white/35" : "text-[#1f2a3b]/35"}`}>▶</span>
+            <span className={`text-sm ${darkDesktop ? "text-white/35" : "text-[#1f2a3b]/35"}`}>⟳</span>
+          </div>
+          <div className={`mx-4 max-w-[56vw] flex-1 rounded-md px-3 py-1 text-center text-[12px] ${darkDesktop ? "border border-white/10 bg-[#3b3b3f]/90 text-white/90" : "border border-black/10 bg-white/80 text-[#1f2a3b]/90"}`}>
+            freelancecreative.co.uk
+          </div>
+          <div />
         </div>
-        <div className="flex items-center gap-3 font-semibold">
-          <Link href={HOME_URL} className="rounded px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white hover:bg-white/35">
-            Back To Home
-          </Link>
-          <span>{dayLabel}</span>
-          <span>{clock}</span>
+
+        <div className={`flex h-8 items-center justify-between px-3 ${darkDesktop ? "bg-black/40" : "bg-white/35"}`}>
+          <div className="flex items-center gap-3 font-semibold">
+            <span className="text-[14px] leading-none"></span>
+            <button type="button" onClick={() => toggleMenu("Finder")} className={`rounded px-1.5 py-0.5 ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`}>
+              Finder
+            </button>
+            <button type="button" onClick={() => toggleMenu("File")} className={`hidden rounded px-1.5 py-0.5 sm:inline ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`}>
+              File
+            </button>
+            <button type="button" onClick={() => toggleMenu("Edit")} className={`hidden rounded px-1.5 py-0.5 sm:inline ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`}>
+              Edit
+            </button>
+            <button type="button" onClick={() => toggleMenu("View")} className={`hidden rounded px-1.5 py-0.5 sm:inline ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`}>
+              View
+            </button>
+            <button type="button" onClick={() => toggleMenu("Go")} className={`hidden rounded px-1.5 py-0.5 sm:inline ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`}>
+              Go
+            </button>
+            <button type="button" onClick={() => toggleMenu("Window")} className={`hidden rounded px-1.5 py-0.5 sm:inline ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`}>
+              Window
+            </button>
+          </div>
+          <div className={`flex items-center gap-3 font-semibold ${darkDesktop ? "text-white/90" : "text-[#1f2a3b]/90"}`}>
+            <span className="text-[11px]">100%</span>
+            <button type="button" onClick={() => setShowControlCenter((v) => !v)} className={`rounded px-1 ${darkDesktop ? "hover:bg-white/14" : "hover:bg-black/10"}`} title="Control Center">
+              ☰
+            </button>
+            <span>{dayLabel}</span>
+            <span>{clock}</span>
+          </div>
         </div>
       </header>
 
       {menuOpen && (
-        <div className="absolute left-4 top-11 z-50 w-52 rounded-xl border border-white/50 bg-white/85 p-2 text-xs text-slate-700 shadow-[0_18px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+        <div className="absolute left-4 top-[74px] z-50 w-52 rounded-xl border border-white/35 bg-[#242b3b]/92 p-2 text-xs text-white shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           {menuOpen === "Finder" && (
-            <button type="button" onClick={() => { launchApp("home"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-slate-100">
+            <button type="button" onClick={() => { launchApp("home"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-white/12">
               Open Portfolio Browser
             </button>
           )}
           {menuOpen === "File" && (
-            <button type="button" onClick={() => { launchApp("services"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-slate-100">
+            <button type="button" onClick={() => { launchApp("services"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-white/12">
               New Services Window
             </button>
           )}
-          {menuOpen === "Edit" && <p className="px-2 py-1.5 text-slate-500">No editable content in desktop mode.</p>}
+          {menuOpen === "Edit" && <p className="px-2 py-1.5 text-white/70">No editable content in desktop mode.</p>}
           {menuOpen === "View" && (
             <button
               type="button"
@@ -316,30 +414,53 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
                 if (activeApp) setIsExpanded((v) => !v);
                 setMenuOpen(null);
               }}
-              className="block w-full rounded px-2 py-1.5 text-left hover:bg-slate-100"
+              className="block w-full rounded px-2 py-1.5 text-left hover:bg-white/12"
             >
               {isExpanded ? "Restore Browser Window" : "Expand Browser Window"}
             </button>
           )}
           {menuOpen === "Go" && (
-            <button type="button" onClick={() => { launchApp("about"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-slate-100">
+            <button type="button" onClick={() => { launchApp("about"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-white/12">
               Go to About
             </button>
           )}
           {menuOpen === "Window" && (
-            <button type="button" onClick={() => { closeApp(); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-slate-100">
+            <button type="button" onClick={() => { closeApp(); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-white/12">
               Close Browser
             </button>
           )}
           {menuOpen === "Help" && (
-            <button type="button" onClick={() => { launchApp("contact"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-slate-100">
+            <button type="button" onClick={() => { launchApp("contact"); setMenuOpen(null); }} className="block w-full rounded px-2 py-1.5 text-left hover:bg-white/12">
               Contact Support
             </button>
           )}
         </div>
       )}
 
-      <main className="relative h-[calc(100%-40px)]" onClick={() => setMenuOpen(null)}>
+      {showControlCenter && (
+        <section className={`absolute right-4 top-[78px] z-50 w-[300px] rounded-2xl p-3 shadow-[0_20px_44px_rgba(0,0,0,0.4)] backdrop-blur-2xl ${darkDesktop ? "border border-white/10 bg-[#222b3a]/92 text-white" : "border border-black/10 bg-[#eef2f8]/92 text-[#1f2a3b]"}`}>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setDarkDesktop((v) => !v)} className={`rounded-xl p-2 text-xs ${darkDesktop ? "bg-blue-600/95 text-white" : "bg-[#d7deea] text-[#1f2a3b]"}`}>{darkDesktop ? "Dark" : "Light"}</button>
+            <button type="button" onClick={toggleFullscreen} className={`rounded-xl p-2 text-xs ${darkDesktop ? "bg-white/10 text-white" : "bg-[#d7deea] text-[#1f2a3b]"}`}>Fullscreen</button>
+          </div>
+          <div className={`mt-3 rounded-xl p-3 ${darkDesktop ? "bg-white/8" : "bg-black/5"}`}>
+            <div className="mb-2 flex items-center justify-between text-sm"><span>Display</span><span>{displayLevel}%</span></div>
+            <input type="range" min={0} max={100} value={displayLevel} onChange={(event) => setDisplayLevel(Number(event.target.value))} className="w-full accent-slate-200" />
+          </div>
+          <div className={`mt-2 rounded-xl p-3 ${darkDesktop ? "bg-white/8" : "bg-black/5"}`}>
+            <div className="mb-2 flex items-center justify-between text-sm"><span>Volume</span><span>{volumeLevel}%</span></div>
+            <input type="range" min={0} max={100} value={volumeLevel} onChange={(event) => setVolumeLevel(Number(event.target.value))} className="w-full accent-slate-200" />
+          </div>
+        </section>
+      )}
+
+      <main
+        className="relative h-[calc(100%-76px)] pb-24"
+        onClick={() => {
+          setMenuOpen(null);
+          setShowControlCenter(false);
+        }}
+      >
         <div className="absolute inset-0 z-20 hidden xl:block">
           <section
             onMouseDown={(event) => startWidgetDrag("calendar", event)}
@@ -347,7 +468,7 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
             style={{ left: widgetPos.calendar.x, top: widgetPos.calendar.y }}
           >
             <p className="text-xs uppercase tracking-[0.18em] text-rose-300">Calendar</p>
-            <p className="mt-2 text-3xl font-semibold">Fri</p>
+            <p className="mt-2 text-3xl font-semibold">{dayLabel.split(",")[0] || "Day"}</p>
             <p className="text-sm text-white/85">{dayLabel}</p>
           </section>
 
@@ -396,8 +517,8 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
               className="group absolute flex w-[104px] cursor-grab flex-col items-center rounded-2xl p-2 text-white transition hover:bg-white/12 active:cursor-grabbing"
               style={{ left: iconPos[app.id].x, top: iconPos[app.id].y }}
             >
-              <span className="relative flex h-[80px] w-[80px] items-center justify-center rounded-[22px] border border-white/35 bg-white/10 shadow-[0_14px_24px_rgba(0,0,0,0.32)] transition group-hover:scale-[1.05]">
-                <img src={app.iconSrc} alt={app.label} className="h-[72px] w-[72px] rounded-[18px] object-cover" draggable={false} />
+              <span className="relative flex h-[80px] w-[80px] items-center justify-center rounded-[22px] border border-white/20 bg-black/10 shadow-[0_14px_24px_rgba(0,0,0,0.32)] transition group-hover:scale-[1.05]">
+                <img src={app.iconSrc} alt={app.label} className="h-[68px] w-[68px] object-contain" draggable={false} />
               </span>
               <span className="mt-2 text-[13px] font-semibold leading-tight tracking-[0.01em] text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
                 {app.label}
@@ -428,14 +549,14 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
                       <button
                         type="button"
                         aria-label="Close window"
-                        onClick={closeApp}
+                        onClick={animateExitToHome}
                         className="h-3.5 w-3.5 rounded-full bg-[#ff5f57]"
                       />
-                      <button type="button" aria-label="Minimize window" onClick={closeApp} className="h-3.5 w-3.5 rounded-full bg-[#febc2e]" />
+                      <button type="button" aria-label="Minimize window" onClick={animateExitToHome} className="h-3.5 w-3.5 rounded-full bg-[#febc2e]" />
                       <button
                         type="button"
-                        aria-label="Expand window"
-                        onClick={() => setIsExpanded((v) => !v)}
+                        aria-label="Window fullscreen"
+                        onClick={toggleFullscreen}
                         className="h-3.5 w-3.5 rounded-full bg-[#28c840]"
                       />
                     </div>
@@ -609,6 +730,54 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
             </section>
           </div>
         )}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-40 flex justify-center px-3">
+          <div
+            ref={dockRef}
+            className="pointer-events-auto flex items-end gap-1 rounded-[20px] border border-white/20 bg-white/20 px-2 py-1.5 shadow-[0_12px_30px_rgba(0,0,0,0.36)] backdrop-blur-2xl"
+            onMouseMove={(event) => {
+              if (isTouchDevice || !dockRef.current) return;
+              const rect = dockRef.current.getBoundingClientRect();
+              setDockMouseX(event.clientX - rect.left);
+            }}
+            onMouseLeave={() => setDockMouseX(null)}
+          >
+            {dockApps.map((app, index) => {
+              const isActive = activeApp === app.id || (app.id === "projects" && showWorkPopup);
+              const scale = getDockScale(index);
+              return (
+                <button
+                  key={`dock-${app.id}`}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    launchApp(app.id);
+                  }}
+                  className="group relative flex h-[58px] w-[58px] items-end justify-center"
+                  style={{
+                    transform: `translateY(${(scale - 1) * -10}px)`,
+                    zIndex: Math.round(scale * 10)
+                  }}
+                  title={app.label}
+                >
+                  <span
+                    className="relative flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-[12px] border border-white/30 bg-white/10 shadow-[0_8px_16px_rgba(0,0,0,0.35)]"
+                    style={{
+                      transform: `scale(${scale})`,
+                      transition: dockMouseX === null || isTouchDevice ? "transform 180ms ease, opacity 180ms ease" : "none",
+                      opacity: isActive ? 1 : 0.94
+                    }}
+                  >
+                    <img src={app.iconSrc} alt={app.label} className="h-[40px] w-[40px] object-contain" draggable={false} />
+                  </span>
+                  <span
+                    className={`absolute -bottom-0.5 h-[4px] w-[4px] rounded-full bg-white transition-opacity ${isActive ? "opacity-95" : "opacity-0 group-hover:opacity-50"}`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </main>
     </div>
   );
