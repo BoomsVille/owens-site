@@ -24,6 +24,13 @@ type EnquiryBody = {
   pageUrl?: string;
 };
 
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" }
+  });
+}
+
 function sanitize(input: EnquiryBody) {
   return {
     name: (input.name ?? "").trim().slice(0, 120),
@@ -63,7 +70,7 @@ export const onRequestPost = async (context: PagesContext) => {
     const payload = sanitize(input);
 
     if (!isValid(payload)) {
-      return Response.json({ ok: false, error: "invalid_payload" }, { status: 400 });
+      return json({ ok: false, error: "invalid_payload" }, 400);
     }
 
     const accountId = context.env.ZOHO_ACCOUNT_ID;
@@ -76,7 +83,7 @@ export const onRequestPost = async (context: PagesContext) => {
     const fromAddress = context.env.ENQUIRY_FROM_ADDRESS || toAddress;
 
     if (!accountId || !clientId || !clientSecret || !refreshToken) {
-      return Response.json({ ok: false, error: "zoho_not_configured" }, { status: 503 });
+      return json({ ok: false, error: "zoho_not_configured" }, 503);
     }
 
     const tokenBody = new URLSearchParams({
@@ -94,12 +101,12 @@ export const onRequestPost = async (context: PagesContext) => {
 
     if (!tokenRes.ok) {
       const detail = await tokenRes.text();
-      return Response.json({ ok: false, error: "zoho_token_error", detail }, { status: 502 });
+      return json({ ok: false, error: "zoho_token_error", detail }, 502);
     }
 
     const tokenJson = (await tokenRes.json()) as { access_token?: string; error?: string };
     if (!tokenJson.access_token) {
-      return Response.json({ ok: false, error: "zoho_token_missing", detail: tokenJson.error || "missing_access_token" }, { status: 502 });
+      return json({ ok: false, error: "zoho_token_missing", detail: tokenJson.error || "missing_access_token" }, 502);
     }
 
     const subject = payload.service ? `New ${payload.service} enquiry` : "New project enquiry";
@@ -122,11 +129,11 @@ export const onRequestPost = async (context: PagesContext) => {
 
     if (!mailRes.ok) {
       const detail = await mailRes.text();
-      return Response.json({ ok: false, error: "zoho_mail_send_failed", detail }, { status: 502 });
+      return json({ ok: false, error: "zoho_mail_send_failed", detail }, 502);
     }
 
-    return Response.json({ ok: true }, { status: 200 });
+    return json({ ok: true }, 200);
   } catch {
-    return Response.json({ ok: false, error: "server_error" }, { status: 500 });
+    return json({ ok: false, error: "server_error" }, 500);
   }
 };

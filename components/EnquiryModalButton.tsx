@@ -76,9 +76,16 @@ export function EnquiryModalButton({
         return;
       }
 
-      const body = (await response.json().catch(() => null)) as { error?: string; detail?: string } | null;
-      const detail = body?.detail ? ` (${body.detail})` : "";
-      setSubmitError(`Send failed: ${body?.error || "unknown_error"}${detail}`);
+      const raw = await response.text();
+      let parsed: { error?: string; detail?: string } | null = null;
+      try {
+        parsed = JSON.parse(raw) as { error?: string; detail?: string };
+      } catch {
+        parsed = null;
+      }
+      const errorCode = parsed?.error || `http_${response.status}`;
+      const detail = parsed?.detail || raw.slice(0, 180);
+      setSubmitError(`Send failed: ${errorCode}${detail ? ` (${detail})` : ""}`);
     } catch {
       setSubmitError("Send failed: network_error");
     } finally {
