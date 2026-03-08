@@ -37,7 +37,11 @@ function buildContent(payload) {
   return lines.filter(Boolean).join("\n");
 }
 
-export async function onRequestPost(context) {
+export async function onRequest(context) {
+  if (context.request.method !== "POST") {
+    return json({ ok: false, error: "method_not_allowed" }, 405);
+  }
+
   try {
     const payload = sanitize(await context.request.json());
     if (!isValid(payload)) return json({ ok: false, error: "invalid_payload" }, 400);
@@ -106,8 +110,3 @@ export async function onRequestPost(context) {
     return json({ ok: false, error: "server_error", detail: String(message) }, 500);
   }
 }
-
-export async function onRequestGet() {
-  return json({ ok: false, error: "method_not_allowed" }, 405);
-}
-
