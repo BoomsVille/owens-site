@@ -1,55 +1,28 @@
-type Env = {
-  ZOHO_ACCOUNT_ID?: string;
-  ZOHO_CLIENT_ID?: string;
-  ZOHO_CLIENT_SECRET?: string;
-  ZOHO_REFRESH_TOKEN?: string;
-  ZOHO_API_BASE_URL?: string;
-  ZOHO_ACCOUNTS_BASE_URL?: string;
-  ENQUIRY_TO_EMAIL?: string;
-  ENQUIRY_FROM_ADDRESS?: string;
-};
-
-type PagesContext = {
-  request: Request;
-  env: Env;
-};
-
-type EnquiryBody = {
-  name?: string;
-  email?: string;
-  business?: string;
-  budget?: string;
-  message?: string;
-  service?: string;
-  pageUrl?: string;
-};
-
-function json(data: unknown, status = 200) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { "content-type": "application/json; charset=utf-8" }
   });
 }
 
-function sanitize(input: EnquiryBody) {
+function sanitize(input) {
+  const body = input || {};
   return {
-    name: (input.name ?? "").trim().slice(0, 120),
-    email: (input.email ?? "").trim().slice(0, 180),
-    business: (input.business ?? "").trim().slice(0, 180),
-    budget: (input.budget ?? "").trim().slice(0, 120),
-    message: (input.message ?? "").trim().slice(0, 4000),
-    service: (input.service ?? "").trim().slice(0, 120),
-    pageUrl: (input.pageUrl ?? "").trim().slice(0, 500)
+    name: String(body.name || "").trim().slice(0, 120),
+    email: String(body.email || "").trim().slice(0, 180),
+    business: String(body.business || "").trim().slice(0, 180),
+    budget: String(body.budget || "").trim().slice(0, 120),
+    message: String(body.message || "").trim().slice(0, 4000),
+    service: String(body.service || "").trim().slice(0, 120),
+    pageUrl: String(body.pageUrl || "").trim().slice(0, 500)
   };
 }
 
-function isValid(payload: ReturnType<typeof sanitize>) {
-  if (!payload.name || !payload.email || !payload.message) return false;
-  if (!payload.email.includes("@")) return false;
-  return true;
+function isValid(payload) {
+  return Boolean(payload.name && payload.email && payload.message && payload.email.includes("@"));
 }
 
-function buildContent(payload: ReturnType<typeof sanitize>) {
+function buildContent(payload) {
   const lines = [
     `Name: ${payload.name}`,
     `Email: ${payload.email}`,
@@ -64,14 +37,10 @@ function buildContent(payload: ReturnType<typeof sanitize>) {
   return lines.filter(Boolean).join("\n");
 }
 
-export const onRequestPost = async (context: PagesContext) => {
+export async function onRequestPost(context) {
   try {
-    const input = (await context.request.json()) as EnquiryBody;
-    const payload = sanitize(input);
-
-    if (!isValid(payload)) {
-      return json({ ok: false, error: "invalid_payload" }, 400);
-    }
+    const payload = sanitize(await context.request.json());
+    if (!isValid(payload)) return json({ ok: false, error: "invalid_payload" }, 400);
 
     const accountId = context.env.ZOHO_ACCOUNT_ID;
     const clientId = context.env.ZOHO_CLIENT_ID;
@@ -100,13 +69,13 @@ export const onRequestPost = async (context: PagesContext) => {
     });
 
     if (!tokenRes.ok) {
-      const detail = await tokenRes.text();
-      return json({ ok: false, error: "zoho_token_error", detail }, 502);
+      return json({ ok: false, error: "zoho_token_error", detail: await tokenRes.text() }, 502);
     }
 
-    const tokenJson = (await tokenRes.json()) as { access_token?: string; error?: string };
-    if (!tokenJson.access_token) {
-      return json({ ok: false, error: "zoho_token_missing", detail: tokenJson.error || "missing_access_token" }, 502);
+    const tokenJson = await tokenRes.json();
+    const accessToken = tokenJson && tokenJson.access_token;
+    if (!accessToken) {
+      return json({ ok: false, error: "zoho_token_missing", detail: tokenJson && tokenJson.error ? tokenJson.error : "missing_access_token" }, 502);
     }
 
     const subject = payload.service ? `New ${payload.service} enquiry` : "New project enquiry";
@@ -116,7 +85,7 @@ export const onRequestPost = async (context: PagesContext) => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        Authorization: `Zoho-oauthtoken ${tokenJson.access_token}`
+        Authorization: `Zoho-oauthtoken ${accessToken}`
       },
       body: JSON.stringify({
         fromAddress,
@@ -128,12 +97,17 @@ export const onRequestPost = async (context: PagesContext) => {
     });
 
     if (!mailRes.ok) {
-      const detail = await mailRes.text();
-      return json({ ok: false, error: "zoho_mail_send_failed", detail }, 502);
+      return json({ ok: false, error: "zoho_mail_send_failed", detail: await mailRes.text() }, 502);
     }
 
     return json({ ok: true }, 200);
-  } catch {
-    return json({ ok: false, error: "server_error" }, 500);
+  } catch (error) {
+    const message = error && typeof error === "object" && "message" in error ? error.message : "server_error";
+    return json({ ok: false, error: "server_error", detail: String(message) }, 500);
   }
-};
+}
+
+export async function onRequestGet() {
+  return json({ ok: false, error: "method_not_allowed" }, 405);
+}
+
