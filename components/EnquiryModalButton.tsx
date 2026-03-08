@@ -20,6 +20,7 @@ export function EnquiryModalButton({
   const [budget, setBudget] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -53,6 +54,7 @@ export function EnquiryModalButton({
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setSubmitError("");
 
     try {
       const response = await fetch("/api/enquiry", {
@@ -74,12 +76,11 @@ export function EnquiryModalButton({
         return;
       }
 
-      // Keep enquiries deliverable while Zoho credentials are being wired.
-      openMailtoFallback();
-      setOpen(false);
+      const body = (await response.json().catch(() => null)) as { error?: string; detail?: string } | null;
+      const detail = body?.detail ? ` (${body.detail})` : "";
+      setSubmitError(`Send failed: ${body?.error || "unknown_error"}${detail}`);
     } catch {
-      openMailtoFallback();
-      setOpen(false);
+      setSubmitError("Send failed: network_error");
     } finally {
       setIsSubmitting(false);
     }
@@ -159,6 +160,18 @@ export function EnquiryModalButton({
                     {isSubmitting ? "Sending..." : "Send Enquiry"}
                   </button>
                 </div>
+                {submitError ? (
+                  <div className="rounded-md border border-red-400/50 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {submitError}
+                    <button
+                      type="button"
+                      onClick={openMailtoFallback}
+                      className="ml-2 underline decoration-red-200/70 underline-offset-2"
+                    >
+                      Open mail app instead
+                    </button>
+                  </div>
+                ) : null}
               </form>
             </section>
           </div>

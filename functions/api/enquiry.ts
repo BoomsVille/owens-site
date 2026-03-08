@@ -9,6 +9,11 @@ type Env = {
   ENQUIRY_FROM_ADDRESS?: string;
 };
 
+type PagesContext = {
+  request: Request;
+  env: Env;
+};
+
 type EnquiryBody = {
   name?: string;
   email?: string;
@@ -52,7 +57,7 @@ function buildContent(payload: ReturnType<typeof sanitize>) {
   return lines.filter(Boolean).join("\n");
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export const onRequestPost = async (context: PagesContext) => {
   try {
     const input = (await context.request.json()) as EnquiryBody;
     const payload = sanitize(input);
@@ -88,12 +93,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
 
     if (!tokenRes.ok) {
-      return Response.json({ ok: false, error: "zoho_token_error" }, { status: 502 });
+      const detail = await tokenRes.text();
+      return Response.json({ ok: false, error: "zoho_token_error", detail }, { status: 502 });
     }
 
-    const tokenJson = (await tokenRes.json()) as { access_token?: string };
+    const tokenJson = (await tokenRes.json()) as { access_token?: string; error?: string };
     if (!tokenJson.access_token) {
-      return Response.json({ ok: false, error: "zoho_token_missing" }, { status: 502 });
+      return Response.json({ ok: false, error: "zoho_token_missing", detail: tokenJson.error || "missing_access_token" }, { status: 502 });
     }
 
     const subject = payload.service ? `New ${payload.service} enquiry` : "New project enquiry";
@@ -115,7 +121,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
 
     if (!mailRes.ok) {
-      return Response.json({ ok: false, error: "zoho_mail_send_failed" }, { status: 502 });
+      const detail = await mailRes.text();
+      return Response.json({ ok: false, error: "zoho_mail_send_failed", detail }, { status: 502 });
     }
 
     return Response.json({ ok: true }, { status: 200 });
@@ -123,4 +130,3 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return Response.json({ ok: false, error: "server_error" }, { status: 500 });
   }
 };
-
