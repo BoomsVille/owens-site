@@ -43,6 +43,7 @@ export async function onRequest(context) {
   }
 
   try {
+    const debugNoZoho = context.request.headers.get("x-debug-no-zoho") === "1";
     const payload = sanitize(await context.request.json());
     if (!isValid(payload)) return json({ ok: false, error: "invalid_payload" }, 400);
 
@@ -54,6 +55,26 @@ export async function onRequest(context) {
     const accountsBaseUrl = context.env.ZOHO_ACCOUNTS_BASE_URL || "https://accounts.zoho.eu";
     const toAddress = context.env.ENQUIRY_TO_EMAIL || "owen@freelancedesign.co.uk";
     const fromAddress = context.env.ENQUIRY_FROM_ADDRESS || toAddress;
+
+    if (debugNoZoho) {
+      return json(
+        {
+          ok: true,
+          debug: true,
+          envPresent: {
+            ZOHO_ACCOUNT_ID: Boolean(accountId),
+            ZOHO_CLIENT_ID: Boolean(clientId),
+            ZOHO_CLIENT_SECRET: Boolean(clientSecret),
+            ZOHO_REFRESH_TOKEN: Boolean(refreshToken)
+          },
+          accountsBaseUrl,
+          apiBaseUrl,
+          toAddressSet: Boolean(toAddress),
+          fromAddressSet: Boolean(fromAddress)
+        },
+        200
+      );
+    }
 
     if (!accountId || !clientId || !clientSecret || !refreshToken) {
       return json({ ok: false, error: "zoho_not_configured" }, 503);
