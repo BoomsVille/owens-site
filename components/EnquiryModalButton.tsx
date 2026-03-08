@@ -19,6 +19,7 @@ export function EnquiryModalButton({
   const [business, setBusiness] = useState("");
   const [budget, setBudget] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -34,8 +35,7 @@ export function EnquiryModalButton({
     return "New project enquiry";
   }, [service]);
 
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const openMailtoFallback = () => {
     const lines = [
       name ? `Name: ${name}` : "",
       email ? `Email: ${email}` : "",
@@ -48,7 +48,41 @@ export function EnquiryModalButton({
       .filter(Boolean)
       .join("\n");
     window.location.href = `mailto:owen@freelancedesign.co.uk?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines)}`;
-    setOpen(false);
+  };
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          business,
+          budget,
+          message,
+          service,
+          pageUrl: window.location.href
+        })
+      });
+
+      if (response.ok) {
+        setOpen(false);
+        return;
+      }
+
+      // Keep enquiries deliverable while Zoho credentials are being wired.
+      openMailtoFallback();
+      setOpen(false);
+    } catch {
+      openMailtoFallback();
+      setOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -119,9 +153,10 @@ export function EnquiryModalButton({
                 <div className="flex justify-end">
                   <button
                     type="submit"
+                    disabled={isSubmitting}
                     className="led-btn-edge inline-flex rounded-full border border-accentBlue/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-accentBlueSoft transition-colors duration-300 hover:border-accentBlueSoft hover:text-mist"
                   >
-                    Send Enquiry
+                    {isSubmitting ? "Sending..." : "Send Enquiry"}
                   </button>
                 </div>
               </form>

@@ -92,6 +92,7 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
   const [contactEmail, setContactEmail] = useState("");
   const [contactSubject, setContactSubject] = useState("");
   const [contactMessage, setContactMessage] = useState("");
+  const [isContactSubmitting, setIsContactSubmitting] = useState(false);
   const suppressIconClickRef = useRef<AppId | null>(null);
   const dockRef = useRef<HTMLDivElement | null>(null);
   const liveVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -185,8 +186,9 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
     }, 420);
   };
 
-  const submitContactEmail = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitContactEmail = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsContactSubmitting(true);
     const lines = [
       contactName ? `Name: ${contactName}` : "",
       contactEmail ? `Email: ${contactEmail}` : "",
@@ -196,7 +198,30 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
       .filter(Boolean)
       .join("\n");
     const mailto = `mailto:owen@freelancedesign.co.uk?subject=${encodeURIComponent(contactSubject || "New project enquiry")}&body=${encodeURIComponent(lines)}`;
-    window.location.href = mailto;
+
+    try {
+      const response = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: contactName,
+          email: contactEmail,
+          business: "",
+          budget: "",
+          message: contactMessage,
+          service: contactSubject || "Desktop contact",
+          pageUrl: window.location.href
+        })
+      });
+
+      if (!response.ok) {
+        window.location.href = mailto;
+      }
+    } catch {
+      window.location.href = mailto;
+    } finally {
+      setIsContactSubmitting(false);
+    }
   };
 
   const toggleMenu = (menuName: string) => {
@@ -637,9 +662,10 @@ export function DesktopExperience({ galleryImages, workEntries }: DesktopExperie
                         <div className="flex justify-end">
                           <button
                             type="submit"
+                            disabled={isContactSubmitting}
                             className="rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-white hover:bg-blue-500"
                           >
-                            Send
+                            {isContactSubmitting ? "Sending..." : "Send"}
                           </button>
                         </div>
                       </form>
