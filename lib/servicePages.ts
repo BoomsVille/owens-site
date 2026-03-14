@@ -22,7 +22,7 @@ export const servicePages: ServicePage[] = [
     title: "Websites built to convert, not just look good.",
     subtitle: "Web Development",
     intro:
-      "I build premium-feel websites that explain your offer clearly, load quickly, and guide visitors toward enquiry or booking action.",
+      "I build Shopify, WordPress/WooCommerce, and fully custom websites that explain your offer clearly, load quickly, and guide visitors toward enquiry. Even Shopify and WordPress stores include custom code refinements to get everything perfect.",
     outcomes: ["Clear positioning", "Higher trust", "Faster performance", "Better enquiry flow"],
     idealFor: [
       "Service brands needing a full website refresh",
@@ -36,6 +36,8 @@ export const servicePages: ServicePage[] = [
     ],
     includes: [
       "Discovery and offer mapping",
+      "Shopify, WordPress/WooCommerce, or fully custom builds",
+      "Custom code refinements for Shopify and WordPress stores",
       "Page architecture and conversion flow",
       "Design system and responsive UI",
       "High-performance development and QA",

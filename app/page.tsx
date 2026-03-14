@@ -9,7 +9,7 @@ const services = [
   {
     title: "Web Development",
     description:
-      "I design and build fast, modern websites that feel premium, communicate clearly, and turn visitors into enquiries.",
+      "I build Shopify, WordPress/WooCommerce, and fully custom websites. Even Shopify and WordPress stores include custom code refinements to get everything perfect.",
     href: "/services/web-development"
   },
   {
